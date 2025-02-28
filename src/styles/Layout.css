@@ -1,0 +1,47 @@
+/* Layout.css */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+}
+
+/* On medium+ screens, use a horizontal layout */
+@media (min-width: 768px) {
+  .layout {
+    flex-direction: row;
+  }
+}
+
+/* Sidebar: by default full width; on md+ screens, fixed at 240px */
+.sidebar {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid #ddd;
+    background-color: #fff;
+    z-index: 1000;
+  }
+}
+
+/* Main content: full width on small screens; offset on md+ screens */
+.main-content {
+  width: 100%;
+  padding: 20px;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    margin-left: 240px;
+  }
+}

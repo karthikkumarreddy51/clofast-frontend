@@ -1,0 +1,114 @@
+/* Base sidebar styling */
+.sidebar {
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+/* Desktop Sidebar */
+.sidebar-desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .sidebar-desktop {
+    display: block;
+    width: 240px; /* Fixed width for a neat sidebar */
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  }
+  .sidebar-desktop .sidebar-logo {
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  .sidebar-desktop .sidebar-logo h2 {
+    font-size: 1.8rem;
+    margin: 0;
+    color: #0275d8;
+  }
+  .sidebar-desktop .sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .sidebar-desktop .sidebar-nav li {
+    margin-bottom: 16px;
+  }
+  .sidebar-desktop .sidebar-nav a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+    font-size: 1rem;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .sidebar-desktop .sidebar-nav a:hover {
+    background-color: #f2f2f2;
+    color: #0275d8;
+  }
+  .sidebar-desktop .sidebar-icon {
+    margin-right: 10px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Mobile Sidebar */
+.sidebar-mobile {
+  display: block;
+  background-color: #fff;
+  padding: 10px 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+@media (min-width: 768px) {
+  .sidebar-mobile {
+    display: none;
+  }
+}
+
+/* Mobile header (hamburger button) */
+.mobile-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mobile-menu-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #0275d8;
+}
+
+/* Mobile navigation menu */
+.mobile-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+
+.mobile-nav li {
+  margin-bottom: 10px;
+}
+
+.mobile-nav a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  transition: color 0.2s ease;
+}
+
+.mobile-nav a:hover {
+  color: #0275d8;
+}
+
+/* Sidebar icons */
+.sidebar-icon {
+  margin-right: 8px;
+  font-size: 1.2rem;
+}
