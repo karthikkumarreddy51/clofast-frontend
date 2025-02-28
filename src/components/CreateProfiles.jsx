@@ -3,7 +3,7 @@ import cronParser from 'cron-parser';
 import '../styles/CreateProfile.css';
 
 const CreateProfile = ({ onClose }) => {
-  // 1. Form State
+  // Form State
   const [definedTerms, setDefinedTerms] = useState([{ specificTerm: '', termDescription: '' }]);
   const [profileTitle, setProfileTitle] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
@@ -13,7 +13,6 @@ const CreateProfile = ({ onClose }) => {
   const [scheduleTime, setScheduleTime] = useState('');
   const [intradayHours, setIntradayHours] = useState('1');
   const [intradayMinutes, setIntradayMinutes] = useState('0');
-  // For weekly schedule, using a single radio selection
   const [weeklyDay, setWeeklyDay] = useState('Monday');
   const [monthlyDay, setMonthlyDay] = useState('1');
   const [cronExpression, setCronExpression] = useState('');
@@ -26,7 +25,7 @@ const CreateProfile = ({ onClose }) => {
     };
   }, []);
 
-  // 2. Handlers for Defined Terms
+  // Handlers for Defined Terms
   const handleAddDefinedTerm = () => {
     setDefinedTerms([...definedTerms, { specificTerm: '', termDescription: '' }]);
   };
@@ -45,7 +44,7 @@ const CreateProfile = ({ onClose }) => {
     setDefinedTerms(updated);
   };
 
-  // 3. Handlers for Schedule
+  // Handlers for Schedule
   const handleToggleSchedule = () => {
     setScheduleOpen(!scheduleOpen);
   };
@@ -54,7 +53,7 @@ const CreateProfile = ({ onClose }) => {
     setFrequency(freq);
   };
 
-  // 4. Next Occurrences Calculator
+  // Next Occurrences Calculator
   const getNextOccurrences = () => {
     const formatDate = (date) =>
       date.toLocaleString('en-GB', {
@@ -141,12 +140,11 @@ const CreateProfile = ({ onClose }) => {
         occurrences.push('Time not set');
       }
     } else if (frequency === 'custom') {
-      // Calculate next occurrences based on cron expression using toDate()
       if (cronExpression.trim() !== '') {
         try {
           const interval = cronParser.parseExpression(cronExpression);
           for (let i = 0; i < 5; i++) {
-            occurrences.push(formatDate(interval.next().toDate())); // Ensure toDate() is called
+            occurrences.push(formatDate(interval.next().toDate()));
           }
         } catch (err) {
           occurrences.push('Invalid cron expression');
@@ -160,7 +158,9 @@ const CreateProfile = ({ onClose }) => {
     return occurrences;
   };
 
-  // 5. Submit Handlers
+  // Updated Submit Handler
+  // The simple fields (user_id, profile_title, profile_description) are sent as query parameters.
+  // The complex fields (defined_terms and schedule_config) are sent in the JSON body.
   const handleSaveProfile = async (draft = false) => {
     let isoDateTime = '';
     if (scheduleTime) {
@@ -172,28 +172,46 @@ const CreateProfile = ({ onClose }) => {
       }
     }
     
-    // Build the schedule payload based on frequency
     let schedulePayload = {};
     if (frequency === 'custom') {
-      schedulePayload = { cronExpression };
+      schedulePayload = { frequency, cron_expression: cronExpression };
     } else {
-      schedulePayload = { Type: frequency, "run at": isoDateTime };
+      schedulePayload = { frequency, date_str: isoDateTime };
     }
     
-    try {
-      const formData = new FormData();
-      formData.append('projecttitle', profileTitle);
-      formData.append('Description', profileDescription);
-      formData.append('Define term', JSON.stringify(definedTerms));
-      formData.append('set schedule', JSON.stringify(schedulePayload));
+    // Build query parameters for simple types
+    const queryParams = new URLSearchParams({
+      user_id: "some_user_id", // Replace with actual user id if available
+      profile_title: profileTitle,
+      profile_description: profileDescription,
+    }).toString();
+    
+    const url = `http://127.0.0.1:8000/insert/documents/profileId?${queryParams}`;
+    
+    // Build the JSON body for the complex types
+    const bodyPayload = {
+      defined_terms: definedTerms,
+      schedule_config: schedulePayload,
+    };
 
-      const response = await fetch('YOUR_BACKEND_URL/api/profiles', {
+    try {
+      const response = await fetch(url, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bodyPayload),
       });
+
       if (!response.ok) {
-        throw new Error('Failed to save profile');
+        // Optionally extract error details
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save profile');
       }
+
+      // Parse the returned payload from the backend
+      const result = await response.json();
+      console.log("Response from backend:", result);
       alert(`Profile ${draft ? 'draft' : 'active'} saved successfully!`);
       onClose();
     } catch (error) {
@@ -441,7 +459,6 @@ const CreateProfile = ({ onClose }) => {
                 </div>
               )}
 
-              {/* Show Next Occurrences only if frequency is NOT 'once' */}
               {frequency && frequency !== 'once' && (
                 <div className="next-occurrences">
                   <h4>Next 5 Occurrences</h4>
