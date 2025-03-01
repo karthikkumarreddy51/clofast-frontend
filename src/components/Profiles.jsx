@@ -23,38 +23,53 @@ const Profiles = () => {
   const [filteredProfiles, setFilteredProfiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCondition, setFilterCondition] = useState('all');
+  // Header counts will always come from the "all" endpoint
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
 
-  // Function to fetch profiles based on filter condition
-  const fetchProfiles = async (condition) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/get/profiles?condition=${condition}`);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-
-      // Update profiles and counts
-      setProfiles(data);
-      setTotal(data.length);
-      const activeProfiles = data.filter(p => p.status.toLowerCase() === 'active');
-      setActiveCount(activeProfiles.length);
-      const inactiveProfiles = data.filter(p => p.status.toLowerCase() !== 'active');
-      setInactiveCount(inactiveProfiles.length);
-    } catch (error) {
-      console.error('Error fetching profiles:', error);
-    }
-  };
-
-  // Fetch profiles when the component mounts or when filterCondition changes
+  // Fetch header counts from the "all" endpoint only once
   useEffect(() => {
+    const fetchHeaderCounts = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/get/profiles?condition=all');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setTotal(data.length);
+        const activeProfiles = data.filter(p => p.status.toLowerCase() === 'active');
+        setActiveCount(activeProfiles.length);
+        const inactiveProfiles = data.filter(p => p.status.toLowerCase() !== 'active');
+        setInactiveCount(inactiveProfiles.length);
+      } catch (error) {
+        console.error('Error fetching header counts:', error);
+      }
+    };
+
+    fetchHeaderCounts();
+  }, []);
+
+  // Fetch profiles for the list based on the current filter condition
+  useEffect(() => {
+    const fetchProfiles = async (condition) => {
+      try {
+        const response = await fetch(`http://127.0.0.1:8000/get/profiles?condition=${condition}`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setProfiles(data);
+      } catch (error) {
+        console.error('Error fetching profiles:', error);
+      }
+    };
+
     fetchProfiles(filterCondition);
   }, [filterCondition]);
 
-  // Filter profiles based on search query
+  // Filter profiles based on the search query
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = profiles.filter(
