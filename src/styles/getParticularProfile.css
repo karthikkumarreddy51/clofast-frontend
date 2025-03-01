@@ -1,0 +1,129 @@
+/* src/components/getParticularProfile.css */
+
+.particular-profile-container {
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  .profile-header {
+    margin-bottom: 20px;
+  }
+  
+  .profile-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  
+  .profile-header p {
+    color: #666;
+    font-size: 1rem;
+    margin: 0;
+  }
+  
+  /* Documents summary & Run button row */
+  .profile-details-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .documents-summary {
+    display: flex;
+    gap: 30px;
+  }
+  
+  .doc-stat {
+    text-align: center;
+  }
+  
+  .doc-stat h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    color: #333;
+  }
+  
+  .doc-stat p {
+    margin: 0;
+    color: #777;
+  }
+  
+  .run-btn {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .run-btn:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Additional info (frequency, connection date, etc.) */
+  .additional-info {
+    margin-bottom: 20px;
+    color: #555;
+    font-size: 0.95rem;
+  }
+  
+  /* Associated documents */
+  .associated-documents-section {
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 16px;
+  }
+  
+  .associated-documents-section h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+  
+  .upload-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .upload-row input[type='text'] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .upload-btn {
+    padding: 8px 16px;
+    background-color: #0275d8;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .upload-btn:hover {
+    background-color: #025aa5;
+  }
+  
+  .documents-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .documents-table th,
+  .documents-table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .documents-table th {
+    background-color: #f9f9f9;
+    font-weight: 600;
+    color: #333;
+  }
+  

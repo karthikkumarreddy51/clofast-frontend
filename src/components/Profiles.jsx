@@ -33,7 +33,7 @@ const Profiles = () => {
   // Default layout = "grid"
   const [layout, setLayout] = useState('grid');
   
-  // State to track clicked cards for visual effects
+  // State to track clicked cards for visual effects (optional)
   const [clickedCards, setClickedCards] = useState({});
 
   // Helper function to map frontend sort options to backend sort values
@@ -123,12 +123,13 @@ const Profiles = () => {
     setLayout((prev) => (prev === 'grid' ? 'list' : 'grid'));
   };
 
-  // Toggle clicked state for a card to apply a visual effect
-  const handleCardClick = (profileId) => {
+  // Handler to toggle clicked state and navigate to detail page
+  const handleProfileClick = (profileId) => {
     setClickedCards((prev) => ({
       ...prev,
       [profileId]: !prev[profileId]
     }));
+    navigate(`/profiles/${profileId}`);
   };
 
   return (
@@ -202,7 +203,7 @@ const Profiles = () => {
           <div 
             className={`profile-card ${clickedCards[profile.profileId] ? 'clicked' : ''}`} 
             key={profile.profileId} 
-            onClick={() => handleCardClick(profile.profileId)}
+            onClick={() => handleProfileClick(profile.profileId)}
           >
             <div className="card h-100">
               <div className="card-header">
