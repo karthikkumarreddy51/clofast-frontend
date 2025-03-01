@@ -22,51 +22,53 @@ const Profiles = () => {
   const [profiles, setProfiles] = useState([]);
   const [filteredProfiles, setFilteredProfiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterCondition, setFilterCondition] = useState('all');
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
 
+  // Function to fetch profiles based on filter condition
+  const fetchProfiles = async (condition) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/get/profiles?condition=${condition}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+
+      // Update profiles and counts
+      setProfiles(data);
+      setTotal(data.length);
+      const activeProfiles = data.filter(p => p.status.toLowerCase() === 'active');
+      setActiveCount(activeProfiles.length);
+      const inactiveProfiles = data.filter(p => p.status.toLowerCase() !== 'active');
+      setInactiveCount(inactiveProfiles.length);
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+    }
+  };
+
+  // Fetch profiles when the component mounts or when filterCondition changes
   useEffect(() => {
-    // Simulate backend data fetch
-    setTimeout(() => {
-      const backendData = {
-        counts: {
-          total: 22,
-          active: 17,
-          inactive: 5,
-        },
-        leaseAgreements: Array.from({ length: 22 }, (_, index) => ({
-          id: index + 1,
-          status: index === 4 ? 'Inactive' : 'Active',
-          title: `Lease Agreement ${index + 1}`,
-          description: `Dynamic details for Lease Agreement ${index + 1}`,
-          definedTerms: [`Term ${index + 1}`, 'Extra Term'],
-          lastRun: '04/12/25',
-          owner: index === 4 ? 'Jane Doe' : 'John Doe',
-          processed: 80 + index,
-          total: 150,
-        })),
-      };
+    fetchProfiles(filterCondition);
+  }, [filterCondition]);
 
-      setProfiles(backendData.leaseAgreements);
-      setTotal(backendData.counts.total);
-      setActiveCount(backendData.counts.active);
-      setInactiveCount(backendData.counts.inactive);
-    }, 1000);
-  }, []);
-
+  // Filter profiles based on search query
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = profiles.filter(
       (p) =>
-        p.title.toLowerCase().includes(lowerQuery) ||
-        p.description.toLowerCase().includes(lowerQuery)
+        (p.profileTitle && p.profileTitle.toLowerCase().includes(lowerQuery)) ||
+        (p.profileDescription && p.profileDescription.toLowerCase().includes(lowerQuery))
     );
     setFilteredProfiles(filtered);
   }, [profiles, searchQuery]);
 
   const handleSearch = (e) => setSearchQuery(e.target.value);
+  const handleFilterChange = (e) => {
+    setFilterCondition(e.target.value);
+  };
   const handleOpenModal = () => setShowModal(true);
 
   return (
@@ -92,7 +94,11 @@ const Profiles = () => {
           className="form-control flex-grow-1"
         />
         <div className="filter-controls d-flex gap-2">
-          <select className="select-filter form-select">
+          <select
+            className="select-filter form-select"
+            value={filterCondition}
+            onChange={handleFilterChange}
+          >
             <option value="all">All</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -104,33 +110,43 @@ const Profiles = () => {
 
       <div className="profiles-grid">
         {filteredProfiles.map((profile) => (
-          <div className="profile-card" key={profile.id}>
+          <div className="profile-card" key={profile.profileId}>
             <div className="card h-100">
               <div className="card-header">
                 <span
-                  className={profile.status === 'Active' ? 'status-badge active' : 'status-badge inactive'}
+                  className={profile.status.toLowerCase() === 'active' ? 'status-badge active' : 'status-badge inactive'}
                 >
-                  {profile.status}
+                  {profile.status.charAt(0).toUpperCase() + profile.status.slice(1)}
                 </span>
-                <h3>{highlightText(profile.title, searchQuery)}</h3>
+                <h3>{highlightText(profile.profileTitle, searchQuery)}</h3>
               </div>
               <div className="card-body">
-                <p className="description">{highlightText(profile.description, searchQuery)}</p>
+                <p className="description">{highlightText(profile.profileDescription, searchQuery)}</p>
                 <p className="terms">
-                  <strong>Defined terms:</strong> {profile.definedTerms.join(', ')}
+                  <strong>Defined terms:</strong>{' '}
+                  {profile.definedTerms &&
+                    profile.definedTerms.map((term, i) => {
+                      const termValue = term.specificTerm || term.hi || '';
+                      return (
+                        <span key={i}>
+                          {termValue}
+                          {i < profile.definedTerms.length - 1 ? ', ' : ''}
+                        </span>
+                      );
+                    })}
                 </p>
-                {profile.status === 'Active' ? (
+                {profile.status.toLowerCase() === 'active' ? (
                   <p className="run-info">
-                    <strong>Last run:</strong> {profile.lastRun}<br />
-                    <strong>Created by:</strong> {profile.owner}
+                    <strong>Last run:</strong> {profile.scheduler && profile.scheduler.date_str}<br />
+                    <strong>Created by:</strong> {profile.userId}
                   </p>
                 ) : (
                   <p className="run-info">
-                    <strong>Created by:</strong> {profile.owner}
+                    <strong>Created by:</strong> {profile.userId}
                   </p>
                 )}
                 <p className="processed-info">
-                  Processed: {profile.processed}/{profile.total}
+                  Processed: {profile.active_documents}/{profile.total_documents}
                 </p>
               </div>
               <div className="card-footer d-flex justify-content-between">
