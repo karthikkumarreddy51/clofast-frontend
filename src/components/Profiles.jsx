@@ -22,21 +22,14 @@ const Profiles = () => {
   const [profiles, setProfiles] = useState([]);
   const [filteredProfiles, setFilteredProfiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Filter + Sorting states
   const [filterCondition, setFilterCondition] = useState('all');
-  const [sortOption, setSortOption] = useState('');
-
-  // Header counts (always from "all")
+  // Header counts will always come from the "all" endpoint
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
-
   const [showModal, setShowModal] = useState(false);
 
-  // -----------------------------
-  // Fetch header counts (ALL only)
-  // -----------------------------
+  // Fetch header counts from the "all" endpoint only once
   useEffect(() => {
     const fetchHeaderCounts = async () => {
       try {
@@ -46,31 +39,23 @@ const Profiles = () => {
         }
         const data = await response.json();
         setTotal(data.length);
-        const activeProfiles = data.filter(p => p.status?.toLowerCase() === 'active');
+        const activeProfiles = data.filter(p => p.status.toLowerCase() === 'active');
         setActiveCount(activeProfiles.length);
-        const inactiveProfiles = data.filter(p => p.status?.toLowerCase() !== 'active');
+        const inactiveProfiles = data.filter(p => p.status.toLowerCase() !== 'active');
         setInactiveCount(inactiveProfiles.length);
       } catch (error) {
         console.error('Error fetching header counts:', error);
       }
     };
+
     fetchHeaderCounts();
   }, []);
 
-  // -------------------------------------------
-  // Fetch profiles based on filter + sortOption
-  // -------------------------------------------
+  // Fetch profiles for the list based on the current filter condition
   useEffect(() => {
-    const fetchProfiles = async () => {
+    const fetchProfiles = async (condition) => {
       try {
-        // Example of constructing a URL with both filter and sort
-        // If your backend requires different param keys, adjust accordingly.
-        let url = `http://127.0.0.1:8000/get/profiles?condition=${filterCondition}`;
-        if (sortOption) {
-          url += `&sort=${sortOption}`;
-        }
-
-        const response = await fetch(url);
+        const response = await fetch(`http://127.0.0.1:8000/get/profiles?condition=${condition}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -81,12 +66,10 @@ const Profiles = () => {
       }
     };
 
-    fetchProfiles();
-  }, [filterCondition, sortOption]);
+    fetchProfiles(filterCondition);
+  }, [filterCondition]);
 
-  // -------------------------------------
-  // Local filtering based on search query
-  // -------------------------------------
+  // Filter profiles based on the search query
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = profiles.filter(
@@ -97,14 +80,10 @@ const Profiles = () => {
     setFilteredProfiles(filtered);
   }, [profiles, searchQuery]);
 
-  // Handlers
   const handleSearch = (e) => setSearchQuery(e.target.value);
-  const handleFilterChange = (e) => setFilterCondition(e.target.value);
-
-  const handleSort = (sortValue) => {
-    setSortOption(sortValue);
+  const handleFilterChange = (e) => {
+    setFilterCondition(e.target.value);
   };
-
   const handleOpenModal = () => setShowModal(true);
 
   return (
@@ -122,7 +101,6 @@ const Profiles = () => {
       </div>
 
       <div className="profiles-filter-row d-flex flex-wrap gap-3 mb-3">
-        {/* Search bar */}
         <input
           type="text"
           placeholder="Search by profile name"
@@ -130,9 +108,7 @@ const Profiles = () => {
           onChange={handleSearch}
           className="form-control flex-grow-1"
         />
-
         <div className="filter-controls d-flex gap-2">
-          {/* Filter: All, Active, Inactive */}
           <select
             className="select-filter form-select"
             value={filterCondition}
@@ -142,80 +118,8 @@ const Profiles = () => {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-
-          {/* Sort Dropdown */}
-          <div className="dropdown">
-            <button
-              className="btn btn-secondary dropdown-toggle"
-              type="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              Sort by
-            </button>
-            <ul className="dropdown-menu">
-              {/* Profile name */}
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleSort('profileNameAsc')}
-                >
-                  Name A-Z
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleSort('profileNameDesc')}
-                >
-                  Name Z-A
-                </button>
-              </li>
-              <li><hr className="dropdown-divider" /></li>
-
-              {/* Last run date */}
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleSort('lastRunNewest')}
-                >
-                  Newest to oldest
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleSort('lastRunOldest')}
-                >
-                  Oldest to newest
-                </button>
-              </li>
-              <li><hr className="dropdown-divider" /></li>
-
-              {/* Number of documents */}
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleSort('docCountHigh')}
-                >
-                  High to low
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => handleSort('docCountLow')}
-                >
-                  Low to high
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Grid button - set to active */}
-          <button className="view-btn btn btn-secondary active" disabled>
-            Grid
-          </button>
+          <button className="sort-btn btn btn-secondary">Sort</button>
+          <button className="view-btn btn btn-secondary">Grid</button>
         </div>
       </div>
 
@@ -225,22 +129,14 @@ const Profiles = () => {
             <div className="card h-100">
               <div className="card-header">
                 <span
-                  className={
-                    profile.status?.toLowerCase() === 'active'
-                      ? 'status-badge active'
-                      : 'status-badge inactive'
-                  }
+                  className={profile.status.toLowerCase() === 'active' ? 'status-badge active' : 'status-badge inactive'}
                 >
-                  {profile.status
-                    ? profile.status.charAt(0).toUpperCase() + profile.status.slice(1)
-                    : 'Unknown'}
+                  {profile.status.charAt(0).toUpperCase() + profile.status.slice(1)}
                 </span>
-                <h3>{highlightText(profile.profileTitle || '', searchQuery)}</h3>
+                <h3>{highlightText(profile.profileTitle, searchQuery)}</h3>
               </div>
               <div className="card-body">
-                <p className="description">
-                  {highlightText(profile.profileDescription || '', searchQuery)}
-                </p>
+                <p className="description">{highlightText(profile.profileDescription, searchQuery)}</p>
                 <p className="terms">
                   <strong>Defined terms:</strong>{' '}
                   {profile.definedTerms &&
@@ -254,18 +150,14 @@ const Profiles = () => {
                       );
                     })}
                 </p>
-                {profile.status?.toLowerCase() === 'active' ? (
+                {profile.status.toLowerCase() === 'active' ? (
                   <p className="run-info">
-                    <strong>Last run:</strong>{' '}
-                    {profile.scheduler && profile.scheduler.date_str
-                      ? profile.scheduler.date_str
-                      : 'N/A'}
-                    <br />
-                    <strong>Created by:</strong> {profile.userId || 'Unknown'}
+                    <strong>Last run:</strong> {profile.scheduler && profile.scheduler.date_str}<br />
+                    <strong>Created by:</strong> {profile.userId}
                   </p>
                 ) : (
                   <p className="run-info">
-                    <strong>Created by:</strong> {profile.userId || 'Unknown'}
+                    <strong>Created by:</strong> {profile.userId}
                   </p>
                 )}
                 <p className="processed-info">
