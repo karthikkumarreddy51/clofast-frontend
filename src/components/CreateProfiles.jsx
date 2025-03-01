@@ -163,22 +163,36 @@ const CreateProfile = ({ onClose }) => {
   // The complex fields (defined_terms and schedule_config) are sent in the JSON body.
   const handleSaveProfile = async (draft = false) => {
     let isoDateTime = '';
-    if (scheduleTime) {
-      if (scheduleDate) {
-        isoDateTime = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+
+    if (frequency === 'intraday') {
+      // For intraday, calculate the first occurrence using the entered hours/minutes
+      const now = new Date();
+      const incrementMinutes = parseInt(intradayHours, 10) * 60 + parseInt(intradayMinutes, 10);
+      if (!isNaN(incrementMinutes) && incrementMinutes > 0) {
+        const firstOccurrence = new Date(now.getTime() + incrementMinutes * 60000);
+        isoDateTime = firstOccurrence.toISOString();
       } else {
-        const todayStr = new Date().toISOString().split('T')[0];
-        console.log("first",todayStr)
-        isoDateTime = new Date(`${todayStr}T${scheduleTime}`).toISOString();
-        console.log("second",isoDateTime)
+        isoDateTime = '';
+      }
+    } else if (frequency === 'custom') {
+      // For custom frequency, we only send the cron expression, so no date is needed.
+      isoDateTime = '';
+    } else {
+      if (scheduleTime) {
+        if (scheduleDate) {
+          isoDateTime = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+        } else {
+          const todayStr = new Date().toISOString().split('T')[0];
+          isoDateTime = new Date(`${todayStr}T${scheduleTime}`).toISOString();
+        }
       }
     }
     
     let schedulePayload = {};
     if (frequency === 'custom') {
-      schedulePayload = { "frequency":frequency, "cron_expression": cronExpression };
+      schedulePayload = { frequency, cron_expression: cronExpression };
     } else {
-      schedulePayload = { "frequency":frequency, "date_str": isoDateTime };
+      schedulePayload = { frequency, date_str: isoDateTime };
     }
     
     // Build query parameters for simple types
@@ -461,7 +475,7 @@ const CreateProfile = ({ onClose }) => {
                 </div>
               )}
 
-              {frequency && frequency !== 'once' && (
+              {frequency && frequency !== 'once' && frequency !== 'custom' && (
                 <div className="next-occurrences">
                   <h4>Next 5 Occurrences</h4>
                   {getNextOccurrences().map((occ, i) => (
