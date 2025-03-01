@@ -241,3 +241,9 @@
   background-color: yellow;
   font-weight: bold;
 }
+.profile-card.clicked {
+  transform: scale(1.05);
+  border: 2px solid #007bff;
+  transition: transform 0.2s, border 0.2s;
+}
+

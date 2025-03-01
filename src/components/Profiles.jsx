@@ -24,6 +24,7 @@ const Profiles = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCondition, setFilterCondition] = useState('all');
   const [sortOption, setSortOption] = useState('');
+  // Counts are now independent from the display filter
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
@@ -55,8 +56,8 @@ const Profiles = () => {
     }
   };
 
-  // Fetch profiles from backend with filter + sort
-  const fetchProfiles = async (condition, sort) => {
+  // Fetch display profiles based on current filter and sort selections
+  const fetchDisplayProfiles = async (condition, sort) => {
     try {
       const mappedSort = mapSortOption(sort);
       const response = await fetch(
@@ -67,20 +68,40 @@ const Profiles = () => {
       }
       const data = await response.json();
       setProfiles(data);
+    } catch (error) {
+      console.error('Error fetching display profiles:', error);
+    }
+  };
+
+  // Fetch counts always based on filter=all
+  const fetchProfilesCount = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/get/sotred/data/based/on/conditions?sort=createdTimeDSC&filter=all`
+      );
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
       setTotal(data.length);
       const activeProfiles = data.filter((p) => p.status.toLowerCase() === 'active');
       setActiveCount(activeProfiles.length);
       const inactiveProfiles = data.filter((p) => p.status.toLowerCase() !== 'active');
       setInactiveCount(inactiveProfiles.length);
     } catch (error) {
-      console.error('Error fetching profiles:', error);
+      console.error('Error fetching profiles count:', error);
     }
   };
 
-  // Re-fetch when filterCondition or sortOption changes
+  // Re-fetch display profiles when filterCondition or sortOption changes
   useEffect(() => {
-    fetchProfiles(filterCondition, sortOption);
+    fetchDisplayProfiles(filterCondition, sortOption);
   }, [filterCondition, sortOption]);
+
+  // Fetch counts only once on mount (or trigger this when profiles change if needed)
+  useEffect(() => {
+    fetchProfilesCount();
+  }, []);
 
   // Filter locally by search query
   useEffect(() => {
