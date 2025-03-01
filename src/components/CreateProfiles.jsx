@@ -176,7 +176,7 @@ const CreateProfile = ({ onClose }) => {
     if (frequency === 'custom') {
       schedulePayload = { "frequency":frequency, "cron_expression": cronExpression };
     } else {
-      schedulePayload = { "frequency":frequency, "date_str": isoDateTime };
+      schedulePayload = { "frequency":frequency, date_str: isoDateTime };
     }
     
     // Build query parameters for simple types
