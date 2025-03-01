@@ -31,6 +31,9 @@ const Profiles = () => {
   
   // Default layout = "grid"
   const [layout, setLayout] = useState('grid');
+  
+  // State to track clicked cards for visual effects
+  const [clickedCards, setClickedCards] = useState({});
 
   // Helper function to map frontend sort options to backend sort values
   const mapSortOption = (sortOption) => {
@@ -39,10 +42,6 @@ const Profiles = () => {
         return "ProfileNameASC";
       case "name_desc":
         return "ProfileNameDSC";
-      case "doc_newest":
-        return "createdTimeDSC";
-      case "doc_oldest":
-        return "createdTimeASC";
       case "run_newest":
         return "createdTimeDSC";
       case "run_oldest":
@@ -103,6 +102,14 @@ const Profiles = () => {
     setLayout((prev) => (prev === 'grid' ? 'list' : 'grid'));
   };
 
+  // Toggle clicked state for a card to apply a visual effect
+  const handleCardClick = (profileId) => {
+    setClickedCards((prev) => ({
+      ...prev,
+      [profileId]: !prev[profileId]
+    }));
+  };
+
   return (
     <div className="profiles-container container-fluid p-3">
       {/* HEADER */}
@@ -151,11 +158,7 @@ const Profiles = () => {
               <option value="name_asc">Name A-Z</option>
               <option value="name_desc">Name Z-A</option>
             </optgroup>
-            <optgroup label="Document Name">
-              <option value="doc_newest">Newest to oldest</option>
-              <option value="doc_oldest">Oldest to newest</option>
-            </optgroup>
-            <optgroup label="Last Run Date">
+            <optgroup label="Created Date">
               <option value="run_newest">Newest to oldest</option>
               <option value="run_oldest">Oldest to newest</option>
             </optgroup>
@@ -175,7 +178,11 @@ const Profiles = () => {
       {/* PROFILE CARDS: grid or list layout */}
       <div className={layout === 'grid' ? 'profiles-grid' : 'profiles-list'}>
         {filteredProfiles.map((profile) => (
-          <div className="profile-card" key={profile.profileId}>
+          <div 
+            className={`profile-card ${clickedCards[profile.profileId] ? 'clicked' : ''}`} 
+            key={profile.profileId} 
+            onClick={() => handleCardClick(profile.profileId)}
+          >
             <div className="card h-100">
               <div className="card-header">
                 <span
@@ -208,7 +215,7 @@ const Profiles = () => {
                 </p>
                 {profile.status.toLowerCase() === 'active' ? (
                   <p className="run-info">
-                    <strong>Last run:</strong>{' '}
+                    <strong>Created Date:</strong>{' '}
                     {profile.scheduler && profile.scheduler.date_str}
                     <br />
                     <strong>Created by:</strong> {profile.userId}
