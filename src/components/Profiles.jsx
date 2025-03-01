@@ -23,53 +23,67 @@ const Profiles = () => {
   const [filteredProfiles, setFilteredProfiles] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCondition, setFilterCondition] = useState('all');
-  // Header counts will always come from the "all" endpoint
+  const [sortOption, setSortOption] = useState('');
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  
+  // Default layout = "grid"
+  const [layout, setLayout] = useState('grid');
 
-  // Fetch header counts from the "all" endpoint only once
-  useEffect(() => {
-    const fetchHeaderCounts = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:8000/get/profiles?condition=all');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setTotal(data.length);
-        const activeProfiles = data.filter(p => p.status.toLowerCase() === 'active');
-        setActiveCount(activeProfiles.length);
-        const inactiveProfiles = data.filter(p => p.status.toLowerCase() !== 'active');
-        setInactiveCount(inactiveProfiles.length);
-      } catch (error) {
-        console.error('Error fetching header counts:', error);
+  // Helper function to map frontend sort options to backend sort values
+  const mapSortOption = (sortOption) => {
+    switch (sortOption) {
+      case "name_asc":
+        return "ProfileNameASC";
+      case "name_desc":
+        return "ProfileNameDSC";
+      case "doc_newest":
+        return "createdTimeDSC";
+      case "doc_oldest":
+        return "createdTimeASC";
+      case "run_newest":
+        return "createdTimeDSC";
+      case "run_oldest":
+        return "createdTimeASC";
+      case "doc_count_high":
+        return "noOfDocumentsDSC";
+      case "doc_count_low":
+        return "noOfDocumentsASC";
+      default:
+        return "createdTimeDSC"; // default sort option
+    }
+  };
+
+  // Fetch profiles from backend with filter + sort
+  const fetchProfiles = async (condition, sort) => {
+    try {
+      const mappedSort = mapSortOption(sort);
+      const response = await fetch(
+        `http://127.0.0.1:8000/get/sotred/data/based/on/conditions?sort=${mappedSort}&filter=${condition}`
+      );
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
-    };
+      const data = await response.json();
+      setProfiles(data);
+      setTotal(data.length);
+      const activeProfiles = data.filter((p) => p.status.toLowerCase() === 'active');
+      setActiveCount(activeProfiles.length);
+      const inactiveProfiles = data.filter((p) => p.status.toLowerCase() !== 'active');
+      setInactiveCount(inactiveProfiles.length);
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+    }
+  };
 
-    fetchHeaderCounts();
-  }, []);
-
-  // Fetch profiles for the list based on the current filter condition
+  // Re-fetch when filterCondition or sortOption changes
   useEffect(() => {
-    const fetchProfiles = async (condition) => {
-      try {
-        const response = await fetch(`http://127.0.0.1:8000/get/profiles?condition=${condition}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setProfiles(data);
-      } catch (error) {
-        console.error('Error fetching profiles:', error);
-      }
-    };
+    fetchProfiles(filterCondition, sortOption);
+  }, [filterCondition, sortOption]);
 
-    fetchProfiles(filterCondition);
-  }, [filterCondition]);
-
-  // Filter profiles based on the search query
+  // Filter locally by search query
   useEffect(() => {
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = profiles.filter(
@@ -80,14 +94,18 @@ const Profiles = () => {
     setFilteredProfiles(filtered);
   }, [profiles, searchQuery]);
 
+  // Handlers
   const handleSearch = (e) => setSearchQuery(e.target.value);
-  const handleFilterChange = (e) => {
-    setFilterCondition(e.target.value);
-  };
+  const handleFilterChange = (e) => setFilterCondition(e.target.value);
+  const handleSortChange = (e) => setSortOption(e.target.value);
   const handleOpenModal = () => setShowModal(true);
+  const handleLayoutToggle = () => {
+    setLayout((prev) => (prev === 'grid' ? 'list' : 'grid'));
+  };
 
   return (
     <div className="profiles-container container-fluid p-3">
+      {/* HEADER */}
       <div className="profiles-header d-flex flex-wrap justify-content-between align-items-center mb-3">
         <h1 className="mb-2 mb-md-0">Profiles</h1>
         <div className="profile-stats d-flex gap-3">
@@ -100,6 +118,7 @@ const Profiles = () => {
         </button>
       </div>
 
+      {/* FILTER & SORT */}
       <div className="profiles-filter-row d-flex flex-wrap gap-3 mb-3">
         <input
           type="text"
@@ -108,7 +127,9 @@ const Profiles = () => {
           onChange={handleSearch}
           className="form-control flex-grow-1"
         />
-        <div className="filter-controls d-flex gap-2">
+
+        <div className="filter-controls d-flex gap-2 align-items-center">
+          {/* Filter Dropdown */}
           <select
             className="select-filter form-select"
             value={filterCondition}
@@ -118,25 +139,60 @@ const Profiles = () => {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <button className="sort-btn btn btn-secondary">Sort</button>
-          <button className="view-btn btn btn-secondary">Grid</button>
+
+          {/* Sort Dropdown (Native Select) */}
+          <select
+            className="sort-select form-select"
+            value={sortOption}
+            onChange={handleSortChange}
+          >
+            <option value="">Sort by</option>
+            <optgroup label="Profile Name">
+              <option value="name_asc">Name A-Z</option>
+              <option value="name_desc">Name Z-A</option>
+            </optgroup>
+            <optgroup label="Document Name">
+              <option value="doc_newest">Newest to oldest</option>
+              <option value="doc_oldest">Oldest to newest</option>
+            </optgroup>
+            <optgroup label="Last Run Date">
+              <option value="run_newest">Newest to oldest</option>
+              <option value="run_oldest">Oldest to newest</option>
+            </optgroup>
+            <optgroup label="Number of Documents">
+              <option value="doc_count_high">High to low</option>
+              <option value="doc_count_low">Low to high</option>
+            </optgroup>
+          </select>
+
+          {/* Layout toggle (Grid or List) */}
+          <button className="view-btn btn btn-secondary" onClick={handleLayoutToggle}>
+            {layout === 'grid' ? 'Grid' : 'List'}
+          </button>
         </div>
       </div>
 
-      <div className="profiles-grid">
+      {/* PROFILE CARDS: grid or list layout */}
+      <div className={layout === 'grid' ? 'profiles-grid' : 'profiles-list'}>
         {filteredProfiles.map((profile) => (
           <div className="profile-card" key={profile.profileId}>
             <div className="card h-100">
               <div className="card-header">
                 <span
-                  className={profile.status.toLowerCase() === 'active' ? 'status-badge active' : 'status-badge inactive'}
+                  className={
+                    profile.status.toLowerCase() === 'active'
+                      ? 'status-badge active'
+                      : 'status-badge inactive'
+                  }
                 >
                   {profile.status.charAt(0).toUpperCase() + profile.status.slice(1)}
                 </span>
                 <h3>{highlightText(profile.profileTitle, searchQuery)}</h3>
               </div>
               <div className="card-body">
-                <p className="description">{highlightText(profile.profileDescription, searchQuery)}</p>
+                <p className="description">
+                  {highlightText(profile.profileDescription, searchQuery)}
+                </p>
                 <p className="terms">
                   <strong>Defined terms:</strong>{' '}
                   {profile.definedTerms &&
@@ -152,7 +208,9 @@ const Profiles = () => {
                 </p>
                 {profile.status.toLowerCase() === 'active' ? (
                   <p className="run-info">
-                    <strong>Last run:</strong> {profile.scheduler && profile.scheduler.date_str}<br />
+                    <strong>Last run:</strong>{' '}
+                    {profile.scheduler && profile.scheduler.date_str}
+                    <br />
                     <strong>Created by:</strong> {profile.userId}
                   </p>
                 ) : (
@@ -173,6 +231,8 @@ const Profiles = () => {
           </div>
         ))}
       </div>
+
+      {/* Create Profile Modal */}
       {showModal && <CreateProfile onClose={() => setShowModal(false)} />}
     </div>
   );
