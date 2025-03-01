@@ -168,7 +168,9 @@ const CreateProfile = ({ onClose }) => {
         isoDateTime = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
       } else {
         const todayStr = new Date().toISOString().split('T')[0];
+        console.log("first",todayStr)
         isoDateTime = new Date(`${todayStr}T${scheduleTime}`).toISOString();
+        console.log("second",isoDateTime)
       }
     }
     
@@ -176,7 +178,7 @@ const CreateProfile = ({ onClose }) => {
     if (frequency === 'custom') {
       schedulePayload = { "frequency":frequency, "cron_expression": cronExpression };
     } else {
-      schedulePayload = { "frequency":frequency, date_str: isoDateTime };
+      schedulePayload = { "frequency":frequency, "date_str": isoDateTime };
     }
     
     // Build query parameters for simple types
