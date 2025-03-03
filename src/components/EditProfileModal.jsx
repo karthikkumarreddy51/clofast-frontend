@@ -4,29 +4,56 @@ import cronParser from 'cron-parser';
 import '../styles/EditProfileModal.css';
 
 const EditProfileModal = ({ profile, onClose }) => {
-  // Initialize state using the existing profile data
-  const [definedTerms, setDefinedTerms] = useState(profile.definedTerms || [{ specificTerm: '', termDescription: '' }]);
-  const [profileTitle, setProfileTitle] = useState(profile.profileTitle || '');
-  const [profileDescription, setProfileDescription] = useState(profile.profileDescription || '');
-  
-  // For scheduling, assume the profile.schedule_config contains:
-  // { frequency, date_str, cron_expression } (if available)
-  const scheduleConfig = profile.schedule_config || {};
-  const [scheduleOpen, setScheduleOpen] = useState(!!scheduleConfig.frequency);
-  const [frequency, setFrequency] = useState(scheduleConfig.frequency || null);
-  // If a date_str exists, split it into date and time (assumes ISO format)
-  const [scheduleDate, setScheduleDate] = useState(
-    scheduleConfig.date_str ? scheduleConfig.date_str.split('T')[0] : ''
-  );
-  const [scheduleTime, setScheduleTime] = useState(
-    scheduleConfig.date_str ? scheduleConfig.date_str.split('T')[1]?.substring(0, 5) : ''
-  );
-  // For intraday, weekly, monthly, or custom values, use defaults or config if available
+  // Local state for form fields (initially empty; will be populated via GET call)
+  const [profileTitle, setProfileTitle] = useState('');
+  const [profileDescription, setProfileDescription] = useState('');
+  const [definedTerms, setDefinedTerms] = useState([{ specificTerm: '', termDescription: '' }]);
+  const [status, setStatus] = useState('active'); // radio: active or inactive
+
+  // Scheduling states
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [frequency, setFrequency] = useState(null);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
   const [intradayHours, setIntradayHours] = useState('1');
   const [intradayMinutes, setIntradayMinutes] = useState('0');
   const [weeklyDay, setWeeklyDay] = useState('Monday');
   const [monthlyDay, setMonthlyDay] = useState('1');
-  const [cronExpression, setCronExpression] = useState(scheduleConfig.cron_expression || '');
+  const [cronExpression, setCronExpression] = useState('');
+
+  // Fetch profile data on mount
+  useEffect(() => {
+    async function fetchProfile() {
+      const url = `http://127.0.0.1:8000/get/particular/profile?profileId=${profile.profileId}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch profile data');
+        }
+        const data = await response.json();
+        // Populate state with fetched data
+        setProfileTitle(data.profileTitle || '');
+        setProfileDescription(data.profileDescription || '');
+        setDefinedTerms(data.definedTerms || [{ specificTerm: '', termDescription: '' }]);
+        setStatus(data.status || 'active');
+        if (data.scheduler) {
+          setFrequency(data.scheduler.frequency || null);
+          if (data.scheduler.date_str) {
+            const parts = data.scheduler.date_str.split('T');
+            setScheduleDate(parts[0]);
+            setScheduleTime(parts[1]?.substring(0, 5) || '');
+            setScheduleOpen(true);
+          }
+        }
+        setCronExpression(data.cronExpression || '');
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        alert('Error fetching profile data.');
+      }
+    }
+    fetchProfile();
+  }, [profile.profileId]);
 
   // Prevent background scrolling while modal is open
   useEffect(() => {
@@ -36,11 +63,10 @@ const EditProfileModal = ({ profile, onClose }) => {
     };
   }, []);
 
-  // Handlers for Defined Terms
+  // Handlers for defined terms
   const handleAddDefinedTerm = () => {
     setDefinedTerms([...definedTerms, { specificTerm: '', termDescription: '' }]);
   };
-
   const handleRemoveDefinedTerm = (index) => {
     if (definedTerms.length > 1) {
       const updated = [...definedTerms];
@@ -48,23 +74,21 @@ const EditProfileModal = ({ profile, onClose }) => {
       setDefinedTerms(updated);
     }
   };
-
   const handleDefinedTermChange = (index, field, value) => {
     const updated = [...definedTerms];
     updated[index][field] = value;
     setDefinedTerms(updated);
   };
 
-  // Handlers for Schedule
+  // Handlers for schedule toggle and frequency
   const handleToggleSchedule = () => {
     setScheduleOpen(!scheduleOpen);
   };
-
   const handleFrequencyChange = (freq) => {
     setFrequency(freq);
   };
 
-  // Next Occurrences Calculator (similar to CreateProfile)
+  // Next Occurrences Calculator (same as in CreateProfile)
   const getNextOccurrences = () => {
     const formatDate = (date) =>
       date.toLocaleString('en-GB', {
@@ -169,7 +193,7 @@ const EditProfileModal = ({ profile, onClose }) => {
     return occurrences;
   };
 
-  // Handler for updating the profile (PUT call)
+  // Handler for updating the profile via PUT call
   const handleUpdateProfile = async () => {
     let isoDateTime = '';
 
@@ -200,14 +224,15 @@ const EditProfileModal = ({ profile, onClose }) => {
       schedulePayload = { frequency, date_str: isoDateTime };
     }
 
-    // Build query parameters for the simple fields
+    // Build query parameters including status
     const queryParams = new URLSearchParams({
       user_id: profile.userId || 'some_user_id',
       profile_title: profileTitle,
       profile_description: profileDescription,
+      status: status
     }).toString();
 
-    // Assuming your backend expects a PUT call to update the profile:
+    // PUT URL (update endpoint – modify as needed)
     const url = `http://127.0.0.1:8000/update/profile/${profile.profileId}?${queryParams}`;
 
     const bodyPayload = {
@@ -218,9 +243,7 @@ const EditProfileModal = ({ profile, onClose }) => {
     try {
       const response = await fetch(url, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyPayload),
       });
       if (!response.ok) {
@@ -264,6 +287,32 @@ const EditProfileModal = ({ profile, onClose }) => {
               value={profileDescription}
               onChange={(e) => setProfileDescription(e.target.value)}
             />
+          </div>
+          {/* Status Radio Buttons */}
+          <div className="form-group">
+            <label>Status</label>
+            <div>
+              <label>
+                <input
+                  type="radio"
+                  name="status"
+                  value="active"
+                  checked={status === 'active'}
+                  onChange={(e) => setStatus(e.target.value)}
+                />
+                Active
+              </label>
+              <label style={{ marginLeft: '10px' }}>
+                <input
+                  type="radio"
+                  name="status"
+                  value="inactive"
+                  checked={status === 'inactive'}
+                  onChange={(e) => setStatus(e.target.value)}
+                />
+                Inactive
+              </label>
+            </div>
           </div>
           {/* Defined Terms */}
           <div className="form-group">
@@ -414,7 +463,7 @@ const EditProfileModal = ({ profile, onClose }) => {
         </div>
         <div className="modal-footer">
           <button type="button" onClick={handleUpdateProfile}>
-            UPDATE PROFILE
+            SAVE CHANGES
           </button>
         </div>
       </div>
