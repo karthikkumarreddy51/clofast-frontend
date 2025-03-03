@@ -1,27 +1,38 @@
-/* styles/EditProfileModal.css */
+/* Modal Overlay */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 2000;
   }
   
-  .edit-profile-modal {
-    background: #fff;
-    padding: 20px;
-    width: 500px;
-    max-width: 90%;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  /* Modal Container – vertical rectangle with increased outer padding */
+  .create-profile-modal {
+    width: 50%;
+    max-width: none;
+    max-height: 90vh;
+    margin: 40px auto;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    padding: 22px;       /* Outer container padding */
+    box-sizing: border-box;
   }
   
+  /* Header */
   .modal-header {
+    padding: 18px;  /* Internal header padding */
+    border-bottom: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -29,76 +40,262 @@
   
   .modal-header h2 {
     margin: 0;
+    font-size: 1.4rem;
   }
   
   .close-btn {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 1.5rem;
     cursor: pointer;
   }
   
+  /* Body – scrollable if content overflows */
   .modal-body {
-    margin-top: 10px;
+    padding: 28px;  /* Internal body padding */
+    overflow-y: auto;
+    max-height: calc(90vh - 150px);
   }
   
+  /* Form Groups */
   .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
   }
   
   .form-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
+    font-weight: 600;
+    margin-bottom: 8px;
   }
   
-  .form-group input {
-    width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
+  .form-group input[type='text'],
+  .form-group input[type='date'],
+  .form-group input[type='time'],
+  .form-group input[type='number'] {
+    padding: 8px;  /* Input padding */
+    border: 1px solid #ccc;
+    border-radius: 4px;
   }
   
+  /* Terms Container */
   .terms-container {
-    margin-bottom: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    padding: 18px;   /* Inner container padding */
+    border-radius: 4px;
+    margin-bottom: 16px;
   }
   
+  /* Defined Term Row */
   .defined-term-row {
     display: flex;
-    gap: 10px;
-    margin-bottom: 5px;
+    gap: 12px;
+    margin-bottom: 12px;
   }
   
-  .defined-term-row input {
+  .defined-term-row input[type='text'] {
     flex: 1;
   }
   
-  .add-term-btn, .remove-term-btn {
-    background-color: #007bff;
+  .remove-term-btn {
+    background-color: #d9534f;
     color: #fff;
     border: none;
-    padding: 5px 10px;
+    padding: 6px 12px;  /* Button padding */
+    border-radius: 4px;
     cursor: pointer;
   }
   
-  .add-term-btn:hover, .remove-term-btn:hover {
-    background-color: #0056b3;
+  .remove-term-btn:hover {
+    background-color: #c9302c;
   }
   
-  .modal-footer {
+  .add-term-btn {
+    background-color: #0275d8;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;  /* Button padding */
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .add-term-btn:hover {
+    background-color: #025aa5;
+  }
+  
+  /* Action Buttons */
+  .action-buttons {
     display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .define-reconciliation-btn,
+  .set-schedule-btn {
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+    padding: 8px 18px;  /* Button padding */
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .define-reconciliation-btn:hover,
+  .set-schedule-btn:hover {
+    background-color: #e2e2e2;
+  }
+  
+  /* Selected schedule button darkens when active */
+  .set-schedule-btn.active {
+    background-color: #333;
+    color: #fff;
+  }
+  
+  /* Schedule Section */
+  .schedule-section {
+    margin-top: 24px;
+    padding: 28px;   /* Section padding */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+  }
+  
+  .schedule-section h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+  
+  .frequency-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .frequency-buttons button {
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+    padding: 8px 18px;  /* Button padding */
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .frequency-buttons button.active {
+    background-color: #0275d8;
+    color: #fff;
+    border-color: #025aa5;
+  }
+  
+  .once-schedule,
+  .intraday-schedule,
+  .daily-schedule,
+  .weekly-schedule,
+  .monthly-schedule,
+  .custom-schedule {
+    margin-bottom: 24px;
+  }
+  
+  .datetime-row,
+  .intraday-row,
+  .time-row,
+  .days-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+  }
+  
+  /* Weekly checkboxes */
+  .days-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  /* Next Occurrences */
+  .next-occurrences {
+    background-color: #fff;
+    border: 1px solid #eee;
+    padding: 28px;   /* Section padding */
+    border-radius: 4px;
+    margin-top: 24px;
+  }
+  
+  .next-occurrences h4 {
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+  
+  /* Footer */
+  .modal-footer {
+    padding: 18px;  /* Footer padding */
+    border-top: 1px solid #ddd;
+    display: flex;
+    gap: 16px;
     justify-content: flex-end;
-    margin-top: 15px;
   }
   
   .modal-footer button {
-    padding: 8px 15px;
-    border: none;
-    background-color: #28a745;
-    color: #fff;
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+    padding: 8px 18px;  /* Button padding */
+    border-radius: 4px;
     cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
   }
   
   .modal-footer button:hover {
-    background-color: #218838;
+    background-color: #e2e2e2;
+  }
+  
+  /* Responsive adjustments for smaller screens */
+  @media (max-width: 768px) {
+    .create-profile-modal {
+      width: 90%;
+      margin: 20px auto;
+      padding: 12px;
+    }
+    
+    .modal-header {
+      padding: 14px;
+    }
+    
+    .modal-body {
+      padding: 20px;
+      max-height: calc(90vh - 120px);
+    }
+    
+    .modal-footer {
+      padding: 14px;
+    }
+    
+    .form-group input[type='text'],
+    .form-group input[type='date'],
+    .form-group input[type='time'],
+    .form-group input[type='number'] {
+      padding: 6px;
+    }
+    
+    .terms-container {
+      padding: 16px;
+    }
+    
+    .schedule-section {
+      padding: 24px;
+    }
+    
+    .next-occurrences {
+      padding: 24px;
+    }
+    
+    .define-reconciliation-btn,
+    .set-schedule-btn,
+    .modal-footer button,
+    .frequency-buttons button {
+      padding: 6px 12px;
+    }
   }
   

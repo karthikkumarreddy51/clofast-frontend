@@ -1,12 +1,40 @@
 // components/EditProfileModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import cronParser from 'cron-parser';
 import '../styles/EditProfileModal.css';
 
 const EditProfileModal = ({ profile, onClose }) => {
-  // Pre-populate fields using the profile data
+  // Initialize state using the existing profile data
+  const [definedTerms, setDefinedTerms] = useState(profile.definedTerms || [{ specificTerm: '', termDescription: '' }]);
   const [profileTitle, setProfileTitle] = useState(profile.profileTitle || '');
   const [profileDescription, setProfileDescription] = useState(profile.profileDescription || '');
-  const [definedTerms, setDefinedTerms] = useState(profile.definedTerms || [{ specificTerm: '', termDescription: '' }]);
+  
+  // For scheduling, assume the profile.schedule_config contains:
+  // { frequency, date_str, cron_expression } (if available)
+  const scheduleConfig = profile.schedule_config || {};
+  const [scheduleOpen, setScheduleOpen] = useState(!!scheduleConfig.frequency);
+  const [frequency, setFrequency] = useState(scheduleConfig.frequency || null);
+  // If a date_str exists, split it into date and time (assumes ISO format)
+  const [scheduleDate, setScheduleDate] = useState(
+    scheduleConfig.date_str ? scheduleConfig.date_str.split('T')[0] : ''
+  );
+  const [scheduleTime, setScheduleTime] = useState(
+    scheduleConfig.date_str ? scheduleConfig.date_str.split('T')[1]?.substring(0, 5) : ''
+  );
+  // For intraday, weekly, monthly, or custom values, use defaults or config if available
+  const [intradayHours, setIntradayHours] = useState('1');
+  const [intradayMinutes, setIntradayMinutes] = useState('0');
+  const [weeklyDay, setWeeklyDay] = useState('Monday');
+  const [monthlyDay, setMonthlyDay] = useState('1');
+  const [cronExpression, setCronExpression] = useState(scheduleConfig.cron_expression || '');
+
+  // Prevent background scrolling while modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   // Handlers for Defined Terms
   const handleAddDefinedTerm = () => {
@@ -27,20 +55,164 @@ const EditProfileModal = ({ profile, onClose }) => {
     setDefinedTerms(updated);
   };
 
-  // Save profile using PUT
-  const handleSaveProfile = async () => {
-    // Build query parameters for simple fields
+  // Handlers for Schedule
+  const handleToggleSchedule = () => {
+    setScheduleOpen(!scheduleOpen);
+  };
+
+  const handleFrequencyChange = (freq) => {
+    setFrequency(freq);
+  };
+
+  // Next Occurrences Calculator (similar to CreateProfile)
+  const getNextOccurrences = () => {
+    const formatDate = (date) =>
+      date.toLocaleString('en-GB', {
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    const now = new Date();
+    let occurrences = [];
+
+    if (frequency === 'once') {
+      if (scheduleDate && scheduleTime) {
+        const dt = new Date(`${scheduleDate}T${scheduleTime}`);
+        occurrences.push(dt > now ? formatDate(dt) : 'Scheduled time passed');
+      } else {
+        occurrences.push('Date/Time not set');
+      }
+    } else if (frequency === 'intraday') {
+      let nextTime = new Date(now);
+      const incrementMinutes = parseInt(intradayHours, 10) * 60 + parseInt(intradayMinutes, 10);
+      if (isNaN(incrementMinutes) || incrementMinutes <= 0) {
+        occurrences.push('Invalid interval');
+      } else {
+        for (let i = 0; i < 5; i++) {
+          nextTime = new Date(nextTime.getTime() + incrementMinutes * 60000);
+          occurrences.push(formatDate(nextTime));
+        }
+      }
+    } else if (frequency === 'daily') {
+      if (scheduleTime) {
+        const [hour, minute] = scheduleTime.split(':').map(Number);
+        let nextDate = new Date(now);
+        nextDate.setHours(hour, minute, 0, 0);
+        if (nextDate < now) nextDate.setDate(nextDate.getDate() + 1);
+        for (let i = 0; i < 5; i++) {
+          let occ = new Date(nextDate);
+          occ.setDate(nextDate.getDate() + i);
+          occurrences.push(formatDate(occ));
+        }
+      } else {
+        occurrences.push('Time not set');
+      }
+    } else if (frequency === 'weekly') {
+      if (scheduleTime) {
+        const [hour, minute] = scheduleTime.split(':').map(Number);
+        const dayMap = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+        const selectedDay = dayMap[weeklyDay];
+        let count = 0;
+        let d = new Date(now);
+        while (count < 5) {
+          if (d.getDay() === selectedDay) {
+            let occ = new Date(d);
+            occ.setHours(hour, minute, 0, 0);
+            if (occ >= now) {
+              occurrences.push(formatDate(occ));
+              count++;
+            }
+          }
+          d.setDate(d.getDate() + 1);
+        }
+      } else {
+        occurrences.push('Time not set');
+      }
+    } else if (frequency === 'monthly') {
+      if (scheduleTime) {
+        const [hour, minute] = scheduleTime.split(':').map(Number);
+        let d = new Date(now);
+        d.setDate(monthlyDay);
+        d.setHours(hour, minute, 0, 0);
+        if (d < now) {
+          d.setMonth(d.getMonth() + 1);
+          d.setDate(monthlyDay);
+          d.setHours(hour, minute, 0, 0);
+        }
+        for (let i = 0; i < 5; i++) {
+          let occ = new Date(d);
+          occ.setMonth(d.getMonth() + i);
+          occurrences.push(formatDate(occ));
+        }
+      } else {
+        occurrences.push('Time not set');
+      }
+    } else if (frequency === 'custom') {
+      if (cronExpression.trim() !== '') {
+        try {
+          const interval = cronParser.parseExpression(cronExpression);
+          for (let i = 0; i < 5; i++) {
+            occurrences.push(formatDate(interval.next().toDate()));
+          }
+        } catch (err) {
+          occurrences.push('Invalid cron expression');
+        }
+      } else {
+        occurrences.push('Cron expression not set');
+      }
+    } else {
+      occurrences.push('Frequency not set');
+    }
+    return occurrences;
+  };
+
+  // Handler for updating the profile (PUT call)
+  const handleUpdateProfile = async () => {
+    let isoDateTime = '';
+
+    if (frequency === 'intraday') {
+      const now = new Date();
+      const incrementMinutes = parseInt(intradayHours, 10) * 60 + parseInt(intradayMinutes, 10);
+      if (!isNaN(incrementMinutes) && incrementMinutes > 0) {
+        const firstOccurrence = new Date(now.getTime() + incrementMinutes * 60000);
+        isoDateTime = firstOccurrence.toISOString();
+      }
+    } else if (frequency === 'custom') {
+      isoDateTime = '';
+    } else {
+      if (scheduleTime) {
+        if (scheduleDate) {
+          isoDateTime = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+        } else {
+          const todayStr = new Date().toISOString().split('T')[0];
+          isoDateTime = new Date(`${todayStr}T${scheduleTime}`).toISOString();
+        }
+      }
+    }
+
+    let schedulePayload = {};
+    if (frequency === 'custom') {
+      schedulePayload = { frequency, cron_expression: cronExpression };
+    } else {
+      schedulePayload = { frequency, date_str: isoDateTime };
+    }
+
+    // Build query parameters for the simple fields
     const queryParams = new URLSearchParams({
       user_id: profile.userId || 'some_user_id',
       profile_title: profileTitle,
       profile_description: profileDescription,
     }).toString();
-    
+
+    // Assuming your backend expects a PUT call to update the profile:
     const url = `http://127.0.0.1:8000/update/profile/${profile.profileId}?${queryParams}`;
-    
+
     const bodyPayload = {
       defined_terms: definedTerms,
-      // Add other fields (like schedule config) as needed
+      schedule_config: schedulePayload,
     };
 
     try {
@@ -56,7 +228,7 @@ const EditProfileModal = ({ profile, onClose }) => {
         throw new Error(errorData.error || 'Failed to update profile');
       }
       const result = await response.json();
-      console.log("Profile updated:", result);
+      console.log('Updated profile:', result);
       alert('Profile updated successfully!');
       onClose();
     } catch (error) {
@@ -67,12 +239,13 @@ const EditProfileModal = ({ profile, onClose }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="edit-profile-modal">
+      <div className="create-profile-modal">
         <div className="modal-header">
           <h2>Edit Profile</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
         <div className="modal-body">
+          {/* Profile Title */}
           <div className="form-group">
             <label>Profile Title</label>
             <input
@@ -82,6 +255,7 @@ const EditProfileModal = ({ profile, onClose }) => {
               onChange={(e) => setProfileTitle(e.target.value)}
             />
           </div>
+          {/* Profile Description */}
           <div className="form-group">
             <label>Profile Description</label>
             <input
@@ -91,8 +265,9 @@ const EditProfileModal = ({ profile, onClose }) => {
               onChange={(e) => setProfileDescription(e.target.value)}
             />
           </div>
+          {/* Defined Terms */}
           <div className="form-group">
-            <label>Defined Terms</label>
+            <label>Define Terms</label>
             <div className="terms-container">
               {definedTerms.map((term, index) => (
                 <div key={index} className="defined-term-row">
@@ -109,11 +284,7 @@ const EditProfileModal = ({ profile, onClose }) => {
                     onChange={(e) => handleDefinedTermChange(index, 'termDescription', e.target.value)}
                   />
                   {definedTerms.length > 1 && (
-                    <button
-                      type="button"
-                      className="remove-term-btn"
-                      onClick={() => handleRemoveDefinedTerm(index)}
-                    >
+                    <button type="button" className="remove-term-btn" onClick={() => handleRemoveDefinedTerm(index)}>
                       Remove term
                     </button>
                   )}
@@ -124,9 +295,127 @@ const EditProfileModal = ({ profile, onClose }) => {
               Add term
             </button>
           </div>
+          {/* Schedule Actions */}
+          <div className="action-buttons">
+            <button
+              type="button"
+              className={`set-schedule-btn ${scheduleOpen ? 'active' : ''}`}
+              onClick={handleToggleSchedule}
+            >
+              Set a schedule
+            </button>
+          </div>
+          {scheduleOpen && (
+            <div className="schedule-section">
+              <h3>Set a schedule</h3>
+              <p>Choose a frequency</p>
+              <div className="frequency-buttons">
+                <button type="button" className={frequency === 'once' ? 'active' : ''} onClick={() => handleFrequencyChange('once')}>
+                  Once
+                </button>
+                <button type="button" className={frequency === 'intraday' ? 'active' : ''} onClick={() => handleFrequencyChange('intraday')}>
+                  Intraday
+                </button>
+                <button type="button" className={frequency === 'daily' ? 'active' : ''} onClick={() => handleFrequencyChange('daily')}>
+                  Daily
+                </button>
+                <button type="button" className={frequency === 'weekly' ? 'active' : ''} onClick={() => handleFrequencyChange('weekly')}>
+                  Weekly
+                </button>
+                <button type="button" className={frequency === 'monthly' ? 'active' : ''} onClick={() => handleFrequencyChange('monthly')}>
+                  Monthly
+                </button>
+                <button type="button" className={frequency === 'custom' ? 'active' : ''} onClick={() => handleFrequencyChange('custom')}>
+                  Custom
+                </button>
+              </div>
+
+              {frequency === 'once' && (
+                <div className="once-schedule">
+                  <label>Run at:</label>
+                  <div className="datetime-row">
+                    <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+                    <input type="time" lang="en-GB" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              {frequency === 'intraday' && (
+                <div className="intraday-schedule">
+                  <label>Run every:</label>
+                  <div className="intraday-row">
+                    <input type="number" min="0" value={intradayHours} onChange={(e) => setIntradayHours(e.target.value)} />
+                    <span>Hours</span>
+                    <input type="number" min="0" value={intradayMinutes} onChange={(e) => setIntradayMinutes(e.target.value)} />
+                    <span>Minutes</span>
+                  </div>
+                </div>
+              )}
+
+              {frequency === 'daily' && (
+                <div className="daily-schedule">
+                  <label>Run at:</label>
+                  <input type="time" lang="en-GB" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
+                </div>
+              )}
+
+              {frequency === 'weekly' && (
+                <div className="weekly-schedule">
+                  <label>Choose a day:</label>
+                  <div className="days-row">
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                      <label key={day}>
+                        <input
+                          type="radio"
+                          name="weeklyDay"
+                          value={day}
+                          checked={weeklyDay === day}
+                          onChange={() => setWeeklyDay(day)}
+                        />
+                        {day}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="time-row">
+                    <label>Time:</label>
+                    <input type="time" lang="en-GB" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              {frequency === 'monthly' && (
+                <div className="monthly-schedule">
+                  <label>Day of the month:</label>
+                  <input type="number" min="1" max="31" value={monthlyDay} onChange={(e) => setMonthlyDay(e.target.value)} />
+                  <div className="time-row">
+                    <label>Time:</label>
+                    <input type="time" lang="en-GB" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              {frequency === 'custom' && (
+                <div className="custom-schedule">
+                  <label>Enter Cron Expression</label>
+                  <input type="text" placeholder="0 0 * * *" value={cronExpression} onChange={(e) => setCronExpression(e.target.value)} />
+                </div>
+              )}
+
+              {frequency && frequency !== 'once' && frequency !== 'custom' && (
+                <div className="next-occurrences">
+                  <h4>Next 5 Occurrences</h4>
+                  {getNextOccurrences().map((occ, i) => (
+                    <div key={i}>{occ}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="modal-footer">
-          <button type="button" onClick={handleSaveProfile}>Save Changes</button>
+          <button type="button" onClick={handleUpdateProfile}>
+            UPDATE PROFILE
+          </button>
         </div>
       </div>
     </div>
