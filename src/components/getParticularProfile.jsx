@@ -1,34 +1,108 @@
-// src/components/GetParticularProfile.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import DeleteProfileModal from './DeleteProfileModal';
+import UseProfileModal from './EditProfileModal';
 import '../styles/getParticularProfile.css';
 
 function GetParticularProfile() {
   const { id } = useParams();
+
+  // State for profile info
   const [profile, setProfile] = useState(null);
+
+  // Loading and error states
   const [loading, setLoading] = useState(true);
 
-  // For searching defined terms
+  // State for modals
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showUseModal, setShowUseModal] = useState(false);
+
+  // For searching documents
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Dummy data to use if backend data is unavailable
+  const dummyProfile = {
+    profileName: 'Lorem Ipsum',
+    profileDescription: 'Lorem ipsum dolor sit amet consectetur. Non si eget suspendisse arcu feugiat arcu egestas.',
+    lastRun: '04/02/25',
+    termVersion: 'Term 2, v10',
+    crmConnection: 'Connected',
+    connectionName: 'ABC',
+    scheduledFrequency: 'Daily',
+    createdBy: 'John Doe',
+    total: 1234,
+    processed: 985,
+    unprocessed: 189,
+    failed: 60,
+    documents: [
+      {
+        id: 1,
+        name: 'Lease Agreement',
+        size: '240 KB',
+        uploadedOn: '04/02/25',
+        status: 'Processed',
+      },
+      {
+        id: 2,
+        name: 'NDA Document',
+        size: '120 KB',
+        uploadedOn: '04/01/25',
+        status: 'Failed',
+      },
+      {
+        id: 3,
+        name: 'Contract Proposal',
+        size: '500 KB',
+        uploadedOn: '03/30/25',
+        status: 'Processed',
+      },
+    ],
+  };
+
+  // Fetch profile data from backend
   useEffect(() => {
     async function fetchProfileData() {
       try {
-        const response = await fetch(
-          `http://127.0.0.1:8000/get/particular/profile?profileId=${id}`
-        );
+        const response = await fetch(`http://127.0.0.1:8000/get/particular/profile?profileId=${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch profile data');
         }
         const data = await response.json();
-        setProfile(data);
+
+        // Transform `data` if needed to match the shape used in the UI
+        const transformedProfile = {
+          profileName: data.profileTitle || dummyProfile.profileName,
+          profileDescription: data.profileDescription || dummyProfile.profileDescription,
+          lastRun: data.updatedTime || dummyProfile.lastRun,
+          termVersion: `Term ${data.version || 2}, v${data.version || 10}`,
+          crmConnection: data.crmConnection || dummyProfile.crmConnection,
+          connectionName: data.connectionName || dummyProfile.connectionName,
+          scheduledFrequency: data.scheduler?.frequency || dummyProfile.scheduledFrequency,
+          createdBy: data.userId || dummyProfile.createdBy,
+          total: data.total_documents || dummyProfile.total,
+          processed: data.active_documents || dummyProfile.processed,
+          unprocessed: (data.total_documents || 0) - (data.active_documents || 0),
+          failed: 60, // if your backend returns this, replace with actual field
+          documents: data.documents || dummyProfile.documents,
+        };
+
+        setProfile(transformedProfile);
       } catch (error) {
         console.error('Error fetching profile:', error);
+        // Fallback to dummy data if fetch fails
+        setProfile(dummyProfile);
       } finally {
         setLoading(false);
       }
     }
-    fetchProfileData();
+
+    if (id) {
+      fetchProfileData();
+    } else {
+      // If no ID, directly use dummy data
+      setProfile(dummyProfile);
+      setLoading(false);
+    }
   }, [id]);
 
   if (loading) {
@@ -39,82 +113,172 @@ function GetParticularProfile() {
     return <div className="gpp-no-data">No profile found.</div>;
   }
 
-  // Destructure the fields from the fetched profile
   const {
-    createdTime,
-    updatedTime,
-    userId,
-    profileId,
-    profileTitle,
+    profileName,
     profileDescription,
-    definedTerms = [],
-    scheduler = {},
-    cronExpression,
-    version,
-    total_documents,
-    active_documents,
-    inactive_documents,
-    status,
+    lastRun,
+    termVersion,
+    crmConnection,
+    connectionName,
+    scheduledFrequency,
+    createdBy,
+    total,
+    processed,
+    unprocessed,
+    failed,
+    documents,
   } = profile;
 
-  // Filter defined terms by search query (case-insensitive)
-  const filteredTerms = definedTerms.filter((term) => {
-    const termText = term.specificTerm.toLowerCase();
-    const descText = term.termDescription.toLowerCase();
+  // Filter documents by search query
+  const filteredDocuments = documents.filter((doc) => {
     const query = searchQuery.toLowerCase();
-    return termText.includes(query) || descText.includes(query);
+    return doc.name.toLowerCase().includes(query);
   });
 
-  return (
-    <div className="gpp-container">
-      <h1>{profileTitle}</h1>
-      <p className="gpp-description">{profileDescription}</p>
+  // Handler for upload button (placeholder)
+  const handleUploadDocument = () => {
+    alert('Upload Document clicked (placeholder)!');
+  };
 
-      <div className="gpp-info-grid">
-        <div><strong>Profile ID:</strong> {profileId}</div>
-        <div><strong>Status:</strong> {status}</div>
-        <div><strong>Created Time:</strong> {createdTime}</div>
-        <div><strong>Updated Time:</strong> {updatedTime || 'N/A'}</div>
-        <div><strong>User ID:</strong> {userId}</div>
-        <div><strong>Version:</strong> {version}</div>
-        <div><strong>Cron Expression:</strong> {cronExpression}</div>
-        <div><strong>Total Documents:</strong> {total_documents}</div>
-        <div><strong>Active Documents:</strong> {active_documents}</div>
-        <div><strong>Inactive Documents:</strong> {inactive_documents}</div>
+  return (
+    <div className="gpp-profile-container">
+      {/* Profile Header Section */}
+      <div className="gpp-header">
+        <div className="gpp-header-left">
+          <h2 className="gpp-profile-name">{profileName}</h2>
+          <p className="gpp-profile-description">{profileDescription}</p>
+          <div className="gpp-term-version">{termVersion}</div>
+        </div>
+
+        <div className="gpp-header-right">
+          <button
+            className="gpp-run-button"
+            onClick={() => {
+              // No action needed per requirements
+            }}
+          >
+            Run
+          </button>
+        </div>
       </div>
 
-      <div className="gpp-scheduler">
-        <h3>Scheduler Info</h3>
-        <p><strong>Frequency:</strong> {scheduler.frequency || 'N/A'}</p>
+      {/* Sub-info (Last run, CRM, etc.) */}
+      <div className="gpp-sub-info">
         <p>
-          <strong>Scheduled Date:</strong>{' '}
-          {scheduler.date_str
-            ? new Date(scheduler.date_str).toLocaleString()
-            : 'N/A'}
+          <strong>Last run:</strong> {lastRun}
+        </p>
+        <p>
+          <strong>CRM Connection:</strong> {crmConnection}
+        </p>
+        <p>
+          <strong>Connection name:</strong> {connectionName}
+        </p>
+        <p>
+          <strong>Scheduled frequency:</strong> {scheduledFrequency}
+        </p>
+        <p>
+          <strong>Created by:</strong> {createdBy}
         </p>
       </div>
 
-      <div className="gpp-defined-terms">
-        <h3>Defined Terms</h3>
-        <input
-          type="text"
-          placeholder="Search defined terms..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {filteredTerms.length > 0 ? (
-          <ul>
-            {filteredTerms.map((term, index) => (
-              <li key={index}>
-                <strong>Term:</strong> {term.specificTerm} &mdash;{' '}
-                <strong>Description:</strong> {term.termDescription}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No defined terms match your search.</p>
-        )}
+      {/* Stats cards */}
+      <div className="gpp-stats-container">
+        <div className="gpp-stat-box">
+          <div className="gpp-stat-number">{total}</div>
+          <div className="gpp-stat-label">Total</div>
+        </div>
+        <div className="gpp-stat-box">
+          <div className="gpp-stat-number">{processed}</div>
+          <div className="gpp-stat-label">Processed</div>
+        </div>
+        <div className="gpp-stat-box">
+          <div className="gpp-stat-number">{unprocessed}</div>
+          <div className="gpp-stat-label">Unprocessed</div>
+        </div>
+        <div className="gpp-stat-box">
+          <div className="gpp-stat-number">{failed}</div>
+          <div className="gpp-stat-label">Failed</div>
+        </div>
       </div>
+
+      {/* Associated Documents */}
+      <div className="gpp-documents-section">
+        <div className="gpp-documents-header">
+          <h3>Associated documents</h3>
+          <div className="gpp-search-and-upload">
+            <input
+              type="text"
+              placeholder="Search by document name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button className="gpp-upload-btn" onClick={handleUploadDocument}>
+              Upload document
+            </button>
+          </div>
+        </div>
+
+        <table className="gpp-documents-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Uploaded on</th>
+              <th>Status</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredDocuments.map((doc) => (
+              <tr key={doc.id}>
+                <td>{doc.name}</td>
+                <td>{doc.size}</td>
+                <td>{doc.uploadedOn}</td>
+                <td>{doc.status}</td>
+                <td style={{ textAlign: 'center' }}>
+                  {/* Icons or text buttons for Use & Delete */}
+                  <button
+                    className="gpp-use-btn"
+                    onClick={() => setShowUseModal(true)}
+                  >
+                    Use
+                  </button>
+                  <button
+                    className="gpp-delete-btn"
+                    onClick={() => setShowDeleteModal(true)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {/* If no documents found after filtering */}
+            {filteredDocuments.length === 0 && (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center' }}>
+                  No documents found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modals (conditionally rendered) */}
+      {showDeleteModal && (
+        <DeleteProfileModal
+          onClose={() => setShowDeleteModal(false)}
+          // Pass any additional props you need
+        />
+      )}
+
+      {showUseModal && (
+        <UseProfileModal
+          onClose={() => setShowUseModal(false)}
+          // Pass any additional props you need
+        />
+      )}
     </div>
   );
 }
