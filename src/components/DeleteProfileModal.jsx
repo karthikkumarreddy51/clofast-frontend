@@ -6,7 +6,7 @@ const DeleteProfileModal = ({ profile, onClose }) => {
   // Handler for deleting the profile
   const handleDelete = async () => {
     console.log(profile.profileId);
-    const url='http://127.0.0.1:8000/delete/Docprofile?profileId=${profile.profileId}';
+    const url=`http://127.0.0.1:8000/delete/Docprofile?profileId=${profile.profileId}`;
     try {
       const response = await fetch(url, {
         method: 'DELETE',
