@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateProfile from './CreateProfiles';
+import EditProfileModal from './EditProfileModal'; // assumed component for editing
+import DeleteProfileModal from './DeleteProfileModal'; // assumed component for deletion
 import '../styles/Profiles.css';
 
 // Helper function to highlight matching text
@@ -24,17 +26,18 @@ const Profiles = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCondition, setFilterCondition] = useState('all');
   const [sortOption, setSortOption] = useState('');
-  // Counts are now independent from the display filter
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
-  
   // Default layout = "grid"
   const [layout, setLayout] = useState('grid');
-  
   // State to track clicked cards for visual effects (optional)
   const [clickedCards, setClickedCards] = useState({});
+  
+  // New states for Edit and Delete modals (to open with pre-populated data)
+  const [editModalData, setEditModalData] = useState(null);
+  const [deleteModalData, setDeleteModalData] = useState(null);
 
   // Helper function to map frontend sort options to backend sort values
   const mapSortOption = (sortOption) => {
@@ -98,7 +101,7 @@ const Profiles = () => {
     fetchDisplayProfiles(filterCondition, sortOption);
   }, [filterCondition, sortOption]);
 
-  // Fetch counts only once on mount (or trigger this when profiles change if needed)
+  // Fetch counts only once on mount
   useEffect(() => {
     fetchProfilesCount();
   }, []);
@@ -114,7 +117,7 @@ const Profiles = () => {
     setFilteredProfiles(filtered);
   }, [profiles, searchQuery]);
 
-  // Handlers
+  // Handlers for search, filter, and sort
   const handleSearch = (e) => setSearchQuery(e.target.value);
   const handleFilterChange = (e) => setFilterCondition(e.target.value);
   const handleSortChange = (e) => setSortOption(e.target.value);
@@ -123,13 +126,28 @@ const Profiles = () => {
     setLayout((prev) => (prev === 'grid' ? 'list' : 'grid'));
   };
 
-  // Handler to toggle clicked state and navigate to detail page
+  // Handler for clicking on the card (excluding footer buttons)
   const handleProfileClick = (profileId) => {
     setClickedCards((prev) => ({
       ...prev,
       [profileId]: !prev[profileId]
     }));
+    // Navigate to a detail view that excludes the run/edit/delete buttons
     navigate(`/profiles/${profileId}`);
+  };
+
+  // Handler for Edit button click
+  const handleEditProfile = (e, profile) => {
+    e.stopPropagation(); // Prevent triggering the card's onClick
+    // Open an edit modal with pre-populated profile data
+    setEditModalData(profile);
+  };
+
+  // Handler for Delete button click
+  const handleDeleteProfile = (e, profile) => {
+    e.stopPropagation(); // Prevent triggering the card's onClick
+    // Open a delete modal with profile data
+    setDeleteModalData(profile);
   };
 
   return (
@@ -156,9 +174,7 @@ const Profiles = () => {
           onChange={handleSearch}
           className="form-control flex-grow-1"
         />
-
         <div className="filter-controls d-flex gap-2 align-items-center">
-          {/* Filter Dropdown */}
           <select
             className="select-filter form-select"
             value={filterCondition}
@@ -168,8 +184,6 @@ const Profiles = () => {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-
-          {/* Sort Dropdown (Native Select) */}
           <select
             className="sort-select form-select"
             value={sortOption}
@@ -189,8 +203,6 @@ const Profiles = () => {
               <option value="doc_count_low">Low to high</option>
             </optgroup>
           </select>
-
-          {/* Layout toggle (Grid or List) */}
           <button className="view-btn btn btn-secondary" onClick={handleLayoutToggle}>
             {layout === 'grid' ? 'Grid' : 'List'}
           </button>
@@ -252,17 +264,44 @@ const Profiles = () => {
                 </p>
               </div>
               <div className="card-footer d-flex justify-content-between">
-                <button className="run-btn btn btn-success">Run</button>
-                <button className="edit-btn btn btn-warning">Edit</button>
-                <button className="delete-btn btn btn-danger">Delete</button>
+                <button 
+                  className="run-btn btn btn-success" 
+                  onClick={(e) => e.stopPropagation()} // Run button has no action yet
+                >
+                  Run
+                </button>
+                <button 
+                  className="edit-btn btn btn-warning" 
+                  onClick={(e) => handleEditProfile(e, profile)}
+                >
+                  Edit
+                </button>
+                <button 
+                  className="delete-btn btn btn-danger" 
+                  onClick={(e) => handleDeleteProfile(e, profile)}
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Create Profile Modal */}
+      {/* Modals for Create, Edit, and Delete */}
       {showModal && <CreateProfile onClose={() => setShowModal(false)} />}
+      {editModalData && (
+        <EditProfileModal 
+          profile={editModalData} 
+          onClose={() => setEditModalData(null)} 
+        />
+      )}
+      {deleteModalData && (
+        <DeleteProfileModal 
+          profile={deleteModalData} 
+          onClose={() => setDeleteModalData(null)} 
+        />
+      )}
     </div>
   );
 };
