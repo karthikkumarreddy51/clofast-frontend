@@ -5,7 +5,6 @@ import '../styles/DeleteProfileModal.css'; // Make sure this path matches your s
 const DeleteProfileModal = ({ profile, onClose }) => {
   // Handler for deleting the profile
   const handleDelete = async () => {
-   // const url = `http://127.0.0.1:8000/delete/Docprofile/${profile.profileId}`;
     const url='http://127.0.0.1:8000/delete/Docprofile?profileId=${profile.profileId}';
     try {
       const response = await fetch(url, {
