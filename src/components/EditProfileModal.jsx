@@ -1,14 +1,14 @@
-// components/EditProfileModal.jsx
+// src/components/EditProfileModal.jsx
 import React, { useState, useEffect } from 'react';
 import cronParser from 'cron-parser';
 import '../styles/EditProfileModal.css';
 
 const EditProfileModal = ({ profile, onClose }) => {
-  // Local state for form fields (initially empty; will be populated via GET call)
+  // Local state for form fields (populated via GET call on mount)
   const [profileTitle, setProfileTitle] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
   const [definedTerms, setDefinedTerms] = useState([{ specificTerm: '', termDescription: '' }]);
-  const [status, setStatus] = useState('active'); // radio: active or inactive
+  const [status, setStatus] = useState('active'); // "active" or "inactive"
 
   // Scheduling states
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -21,7 +21,7 @@ const EditProfileModal = ({ profile, onClose }) => {
   const [monthlyDay, setMonthlyDay] = useState('1');
   const [cronExpression, setCronExpression] = useState('');
 
-  // Fetch profile data on mount
+  // Fetch profile data on mount via GET request
   useEffect(() => {
     async function fetchProfile() {
       const url = `http://127.0.0.1:8000/get/particular/profile?profileId=${profile.profileId}`;
@@ -58,15 +58,14 @@ const EditProfileModal = ({ profile, onClose }) => {
   // Prevent background scrolling while modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
+    return () => { document.body.style.overflow = 'auto'; };
   }, []);
 
   // Handlers for defined terms
   const handleAddDefinedTerm = () => {
     setDefinedTerms([...definedTerms, { specificTerm: '', termDescription: '' }]);
   };
+
   const handleRemoveDefinedTerm = (index) => {
     if (definedTerms.length > 1) {
       const updated = [...definedTerms];
@@ -74,21 +73,23 @@ const EditProfileModal = ({ profile, onClose }) => {
       setDefinedTerms(updated);
     }
   };
+
   const handleDefinedTermChange = (index, field, value) => {
     const updated = [...definedTerms];
     updated[index][field] = value;
     setDefinedTerms(updated);
   };
 
-  // Handlers for schedule toggle and frequency
+  // Handlers for schedule toggle and frequency selection
   const handleToggleSchedule = () => {
     setScheduleOpen(!scheduleOpen);
   };
+
   const handleFrequencyChange = (freq) => {
     setFrequency(freq);
   };
 
-  // Next Occurrences Calculator (same as in CreateProfile)
+  // Next Occurrences Calculator (same logic as in CreateProfile)
   const getNextOccurrences = () => {
     const formatDate = (date) =>
       date.toLocaleString('en-GB', {
@@ -193,7 +194,7 @@ const EditProfileModal = ({ profile, onClose }) => {
     return occurrences;
   };
 
-  // Handler for updating the profile via PUT call
+  // Handler for updating the profile via PUT call using the new URL
   const handleUpdateProfile = async () => {
     let isoDateTime = '';
 
@@ -224,16 +225,16 @@ const EditProfileModal = ({ profile, onClose }) => {
       schedulePayload = { frequency, date_str: isoDateTime };
     }
 
-    // Build query parameters including status
+    // Build query parameters for the PUT URL (using the new endpoint)
     const queryParams = new URLSearchParams({
-      user_id: profile.userId || 'some_user_id',
+      profileId: profile.profileId,
       profile_title: profileTitle,
       profile_description: profileDescription,
       status: status
     }).toString();
 
-    // PUT URL (update endpoint – modify as needed)
-    const url = `http://127.0.0.1:8000/update/profile/${profile.profileId}?${queryParams}`;
+    // Updated PUT URL using "update/Docprofile"
+    const url = `http://127.0.0.1:8000/update/Docprofile?${queryParams}`;
 
     const bodyPayload = {
       defined_terms: definedTerms,
