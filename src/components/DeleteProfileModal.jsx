@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import '../styles/DeleteProfileModal.css';
 
 const DeleteProfileModal = ({ profile, onClose, onDeleteSuccess }) => {
-  // Disable background scrolling when the modal is open
+  // Prevent background scrolling while modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -22,7 +22,12 @@ const DeleteProfileModal = ({ profile, onClose, onDeleteSuccess }) => {
       const result = await response.json();
       console.log('Profile deleted:', result);
       alert('Profile deleted successfully!');
-      onDeleteSuccess && onDeleteSuccess(profile.profileId);
+      // Call parent's onDeleteSuccess callback to update state if needed
+      if (onDeleteSuccess) {
+        onDeleteSuccess(profile.profileId);
+      }
+      // Close the modal right after a successful delete response
+      onClose();
     } catch (error) {
       console.error('Error deleting profile:', error);
       alert('An error occurred while deleting the profile.');
