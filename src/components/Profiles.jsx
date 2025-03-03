@@ -256,6 +256,9 @@ const Profiles = () => {
                   </p>
                 ) : (
                   <p className="run-info">
+                    <strong>Created Date:</strong>{' '}
+                    {profile.scheduler && profile.scheduler.date_str}
+                    <br />
                     <strong>Created by:</strong> {profile.userId}
                   </p>
                 )}
