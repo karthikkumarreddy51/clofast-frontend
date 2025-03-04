@@ -265,7 +265,7 @@ function GetParticularProfile() {
           </div>
 
           <div className="gpp-info-item">
-            <span className="gpp-info-label">Reconciliation</span>
+            <span className="gpp-info-label">Created By</span>
             <div className="gpp-info-nested-item">
               <span className="gpp-info-label-nested">Created by:</span>
               <span>{createdBy}</span>
