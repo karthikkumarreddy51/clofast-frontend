@@ -1,122 +1,225 @@
-.gpp-profile-container {
-  width: 95%;
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: sans-serif;
+/* getParticularProfile.css */
+
+.gpp-container {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background-color: #f7f7f7; /* Light grey background */
 }
 
-.gpp-header {
+.gpp-breadcrumb {
+  margin-bottom: 20px;
+  color: #777;
+  font-size: 14px;
+}
+
+.gpp-breadcrumb span + span::before {
+  content: '>';
+  margin: 0 5px;
+  color: #ccc;
+}
+
+.gpp-header-section {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
 }
 
 .gpp-header-left {
-  flex: 1;
-}
-
-.gpp-profile-name {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.gpp-profile-description {
-  margin: 0.5rem 0;
-  color: #555;
-}
-
-.gpp-term-version {
-  font-size: 0.9rem;
-  color: #999;
+  flex-grow: 1;
+  margin-right: 20px;
 }
 
 .gpp-header-right {
   display: flex;
-  align-items: center;
+  gap: 10px;
+}
+
+.gpp-profile-title {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.gpp-profile-desc {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.gpp-profile-terms {
+  color: #777;
+  font-size: 14px;
+}
+
+.gpp-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .gpp-run-button {
-  background-color: #007bff;
-  border: none;
-  color: #fff;
-  padding: 0.6rem 1.2rem;
-  border-radius: 4px;
-  cursor: pointer;
+  background-color: #007bff; /* Blue */
 }
 
-.gpp-run-button:hover {
-  background-color: #0056b3;
+.gpp-update-button {
+  background-color: #6c757d; /* Grey */
 }
 
-.gpp-sub-info {
+.gpp-delete-button {
+  background-color: #dc3545; /* Red */
+}
+
+.gpp-info-row {
   display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.gpp-sub-info p {
-  margin: 0.3rem 0;
+.gpp-additional-info,
+.gpp-documents-stats {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  flex: 1; /* Equal width distribution */
+}
+
+.gpp-info-item {
+  margin-bottom: 15px;
+}
+
+.gpp-info-label {
+  font-weight: bold;
+  color: #333;
+  display: block; /* Make label take full width for layout */
+  margin-bottom: 5px; /* Space between label and nested item */
+}
+
+.gpp-info-nested-item {
+  padding-left: 10px; /* Indent nested items */
+}
+
+.gpp-info-label-nested {
+  font-weight: normal; /* or inherit, depending on desired look */
+  color: #555;
+  display: inline-block; /* Keep label and value in same line */
+  width: auto; /* Adjust as needed for alignment */
+  margin-right: 5px; /* Space between label and value */
+}
+
+
+.gpp-documents-stats .gpp-documents-heading {
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #333;
 }
 
 .gpp-stats-container {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  flex-wrap: wrap; /* Allow items to wrap to the next line */
+  justify-content: space-between; /* Distribute space between boxes on each row */
+  gap: 10px; /* Spacing between the boxes */
 }
 
 .gpp-stat-box {
-  flex: 1;
-  background: #f9f9f9;
-  border-radius: 4px;
-  padding: 1rem;
   text-align: center;
+  padding: 15px 10px;
+  border-radius: 5px;
+  background-color: #eee; /* Light background for stats boxes */
+  width: calc(50% - 5px); /* Each box takes approximately half the width, minus half the gap */
+  box-sizing: border-box; /* To include padding and border in the element's total width and height */
+  margin-bottom: 10px; /* Add some vertical space between the rows */
 }
 
 .gpp-stat-number {
-  font-size: 1.4rem;
+  font-size: 20px;
   font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
 }
 
 .gpp-stat-label {
-  margin-top: 0.5rem;
-  color: #666;
+  color: #555;
+  font-size: 14px;
 }
 
 .gpp-documents-section {
-  margin-top: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .gpp-documents-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 20px;
 }
 
-.gpp-search-and-upload {
+.gpp-documents-header h2 {
+  font-size: 20px;
+  color: #333;
+  margin: 0;
+}
+
+.gpp-search-upload {
   display: flex;
-  gap: 0.5rem;
+  gap: 10px;
+  align-items: center;
 }
 
-.gpp-search-and-upload input {
-  padding: 0.5rem;
+.gpp-search-container {
+  display: flex;
+  align-items: center;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 5px;
+  overflow: hidden; /* To contain the rounded border */
 }
 
-.gpp-upload-btn {
-  background-color: #28a745;
+
+.gpp-search-input {
+  padding: 8px 10px;
   border: none;
-  color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  outline: none;
+  border-right: 1px solid #ccc; /* Separator between input and button */
+  border-radius: 0; /* Reset border-radius for seamless integration */
+}
+
+.gpp-search-button {
+  background-color: #f8f9fa; /* Light grey background for button */
+  color: #495057; /* Dark grey text */
+  border: none;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 0; /* Reset border-radius for seamless integration */
+  font-size: 14px;
+}
+
+.gpp-search-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  text-align: center;
+  line-height: 14px;
+}
+
+.gpp-search-all {
+  color: #007bff;
+  font-size: 14px;
+  margin-left: 10px;
   cursor: pointer;
 }
 
-.gpp-upload-btn:hover {
-  background-color: #218838;
+
+.gpp-upload-button {
+  background-color: #28a745; /* Green */
 }
 
 .gpp-documents-table {
@@ -124,46 +227,74 @@
   border-collapse: collapse;
 }
 
-.gpp-documents-table thead {
-  background-color: #f1f1f1;
-}
-
 .gpp-documents-table th,
 .gpp-documents-table td {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
 }
 
-.gpp-use-btn,
-.gpp-delete-btn {
-  margin: 0 0.25rem;
-  padding: 0.3rem 0.6rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.gpp-documents-table th {
+  font-weight: bold;
+  color: #555;
 }
 
-.gpp-use-btn {
-  background-color: #6c757d;
-  color: #fff;
+.gpp-documents-table tbody tr:last-child td {
+  border-bottom: none; /* Remove border from last row */
 }
 
-.gpp-delete-btn {
-  background-color: #dc3545;
-  color: #fff;
+
+.gpp-doc-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.gpp-use-btn:hover {
-  background-color: #5a6268;
+.gpp-doc-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  object-fit: cover;
 }
 
-.gpp-delete-btn:hover {
-  background-color: #c82333;
+.gpp-doc-name {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 3px;
 }
 
-/* Loading & No data states */
-.gpp-loading,
-.gpp-no-data {
+.gpp-doc-pages {
+  color: #777;
+  font-size: 13px;
+}
+
+.gpp-status-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
   text-align: center;
-  margin-top: 2rem;
+}
+
+.gpp-status-badge.processed {
+  background-color: #28a745; /* Green */
+}
+
+.gpp-status-badge.unprocessed {
+  background-color: #ffc107; /* Amber/Warning */
+  color: #333; /* Dark text for contrast on yellow */
+}
+
+.gpp-status-badge.failed {
+  background-color: #dc3545; /* Red */
+}
+
+
+/* Loading and No Data States (If you need basic styling) */
+.gpp-loading, .gpp-no-data {
+  text-align: center;
+  padding: 20px;
+  color: #777;
 }

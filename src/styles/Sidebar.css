@@ -1,7 +1,8 @@
-/* Base sidebar styling */
 .sidebar {
   background-color: #ffffff;
   box-sizing: border-box;
+  overflow-x: hidden;
+
 }
 
 /* Desktop Sidebar */

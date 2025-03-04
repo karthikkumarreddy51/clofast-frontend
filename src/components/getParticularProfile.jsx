@@ -1,36 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import EditProfileModal from './EditProfileModal';
 import DeleteProfileModal from './DeleteProfileModal';
-import UseProfileModal from './EditProfileModal';
-import '../styles/getParticularProfile.css';
+import '../styles/getParticularProfile.css'; // Ensure correct path
 
 function GetParticularProfile() {
   const { id } = useParams();
 
-  // State for profile info
+  // Profile state and loading indicator
   const [profile, setProfile] = useState(null);
-
-  // Loading and error states
   const [loading, setLoading] = useState(true);
 
-  // State for modals
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showUseModal, setShowUseModal] = useState(false);
-
-  // For searching documents
+  // For document search
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Dummy data to use if backend data is unavailable
+  // Modal state – storing profile id
+  const [editModalProfileId, setEditModalProfileId] = useState(null);
+  const [deleteModalProfileId, setDeleteModalProfileId] = useState(null);
+
+  // Dummy fallback data
   const dummyProfile = {
-    profileName: 'Lorem Ipsum',
+    id: id,
+    profileName: 'Profile Name',
     profileDescription:
       'Lorem ipsum dolor sit amet consectetur. Non si eget suspendisse arcu feugiat arcu egestas.',
+    definedTerms: [
+      { specificTerm: 'Term 1', termDescription: 'this is term 1 description' },
+      { specificTerm: 'Term 2', termDescription: 'this is term 2 description' },
+    ],
     lastRun: '04/02/25',
-    termVersion: 'Term 2, v10',
-    crmConnection: 'Connected',
-    connectionName: 'ABC',
-    scheduledFrequency: 'Daily',
-    createdBy: 'John Doe',
+    crmConnection: 'Connection name',
+    scheduledFrequency: 'Weekly',
+    createdBy: 'some_user_id',
     total: 1234,
     processed: 985,
     unprocessed: 189,
@@ -38,29 +39,58 @@ function GetParticularProfile() {
     documents: [
       {
         id: 1,
+        thumbnail: 'https://via.placeholder.com/40',
         name: 'Lease Agreement',
+        pages: 20,
         size: '240 KB',
         uploadedOn: '04/02/25',
+        processedOn: '04/02/25',
         status: 'Processed',
       },
       {
         id: 2,
-        name: 'NDA Document',
-        size: '120 KB',
-        uploadedOn: '04/01/25',
-        status: 'Failed',
+        thumbnail: 'https://via.placeholder.com/40',
+        name: 'Lease Agreement',
+        pages: 20,
+        size: '240 KB',
+        uploadedOn: '04/02/25',
+        processedOn: null,
+        status: 'Unprocessed',
       },
       {
         id: 3,
-        name: 'Contract Proposal',
-        size: '500 KB',
-        uploadedOn: '03/30/25',
+        thumbnail: 'https://via.placeholder.com/40',
+        name: 'Lease Agreement',
+        pages: 20,
+        size: '240 KB',
+        uploadedOn: '04/02/25',
+        processedOn: null,
+        status: 'Failed',
+      },
+      {
+        id: 4,
+        thumbnail: 'https://via.placeholder.com/40',
+        name: 'Lease Agreement',
+        pages: 20,
+        size: '240 KB',
+        uploadedOn: '04/02/25',
+        processedOn: '04/02/25',
         status: 'Processed',
+      },
+      {
+        id: 5,
+        thumbnail: 'https://via.placeholder.com/40',
+        name: 'Lease Agreement',
+        pages: 20,
+        size: '240 KB',
+        uploadedOn: '04/02/25',
+        processedOn: null,
+        status: 'Failed',
       },
     ],
   };
 
-  // Fetch profile data from backend
+  // Fetch profile data from the backend
   useEffect(() => {
     async function fetchProfileData() {
       try {
@@ -72,27 +102,41 @@ function GetParticularProfile() {
         }
         const data = await response.json();
 
-        // Transform `data` if needed to match the shape used in the UI
+        // Transform backend data to match the structure
         const transformedProfile = {
+          id: data.id || id,
           profileName: data.profileTitle || dummyProfile.profileName,
-          profileDescription: data.profileDescription || dummyProfile.profileDescription,
+          profileDescription:
+            data.profileDescription || dummyProfile.profileDescription,
+          definedTerms: data.definedTerms || dummyProfile.definedTerms,
           lastRun: data.updatedTime || dummyProfile.lastRun,
-          termVersion: `Term ${data.version || 2}, v${data.version || 10}`,
           crmConnection: data.crmConnection || dummyProfile.crmConnection,
-          connectionName: data.connectionName || dummyProfile.connectionName,
-          scheduledFrequency: data.scheduler?.frequency || dummyProfile.scheduledFrequency,
+          scheduledFrequency:
+            data.scheduler?.frequency || dummyProfile.scheduledFrequency,
           createdBy: data.userId || dummyProfile.createdBy,
           total: data.total_documents || dummyProfile.total,
           processed: data.active_documents || dummyProfile.processed,
-          unprocessed: (data.total_documents || 0) - (data.active_documents || 0),
-          failed: 60, // If your backend returns this, replace it with actual data
-          documents: data.documents || dummyProfile.documents,
+          unprocessed:
+            (data.total_documents || 0) - (data.active_documents || 0),
+          failed: data.failed || dummyProfile.failed,
+          documents: (data.documents || dummyProfile.documents).map(
+            (doc, idx) => ({
+              id: doc.id ?? idx,
+              thumbnail: doc.thumbnail || 'https://via.placeholder.com/40',
+              name: doc.name || 'Untitled Document',
+              pages: doc.pages || 0,
+              size: doc.size || 'N/A',
+              uploadedOn: doc.uploadedOn || 'N/A',
+              processedOn: doc.processedOn || null,
+              status: doc.status || 'Unprocessed',
+            })
+          ),
         };
 
         setProfile(transformedProfile);
       } catch (error) {
         console.error('Error fetching profile:', error);
-        // Fallback to dummy data if fetch fails
+        // Fallback to dummy data
         setProfile(dummyProfile);
       } finally {
         setLoading(false);
@@ -102,7 +146,6 @@ function GetParticularProfile() {
     if (id) {
       fetchProfileData();
     } else {
-      // If no ID, directly use dummy data
       setProfile(dummyProfile);
       setLoading(false);
     }
@@ -119,10 +162,9 @@ function GetParticularProfile() {
   const {
     profileName,
     profileDescription,
+    definedTerms,
     lastRun,
-    termVersion,
     crmConnection,
-    connectionName,
     scheduledFrequency,
     createdBy,
     total,
@@ -132,131 +174,218 @@ function GetParticularProfile() {
     documents,
   } = profile;
 
-  // Filter documents by search query
-  const filteredDocuments = documents.filter((doc) => {
-    const query = searchQuery.toLowerCase();
-    return doc.name.toLowerCase().includes(query);
-  });
+  // Create a simple inline function to render defined terms
+  const renderDefinedTermsInline = () => {
+    if (!definedTerms) return 'None';
+    if (Array.isArray(definedTerms)) {
+      // e.g. "Term 1, this is term 1 description, Term 2, this is term 2 description"
+      return definedTerms
+        .map((term) => {
+          const spec = term.specificTerm || '';
+          const desc = term.termDescription || '';
+          return `${spec}${desc ? `, ${desc}` : ''}`;
+        })
+        .join('; ');
+    }
+    // If definedTerms is a single object
+    const spec = definedTerms.specificTerm || '';
+    const desc = definedTerms.termDescription || '';
+    return `${spec}${desc ? `, ${desc}` : ''}`;
+  };
 
-  // Handler for upload button (placeholder)
-  const handleUploadDocument = () => {
-    alert('Upload Document clicked (placeholder)!');
+  // Filter documents based on search query
+  const filteredDocuments = documents.filter((doc) =>
+    doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleEditProfile = (e) => {
+    e.stopPropagation();
+    setEditModalProfileId(profile.id);
+  };
+
+  const handleDeleteProfile = (e) => {
+    e.stopPropagation();
+    setDeleteModalProfileId(profile.id);
   };
 
   return (
-    <div className="gpp-profile-container">
-      {/* Profile Header Section */}
-      <div className="gpp-header">
-        <div className="gpp-header-left">
-          <h2 className="gpp-profile-name">{profileName}</h2>
-          <p className="gpp-profile-description">{profileDescription}</p>
-          <div className="gpp-term-version">{termVersion}</div>
-        </div>
+    <div className="gpp-container">
+      {/* Breadcrumb */}
+      <div className="gpp-breadcrumb">
+        <span>Profiles</span> &gt; <span>{profileName}</span>
+      </div>
 
+      {/* Header Section */}
+      <div className="gpp-header-section">
+        <div className="gpp-header-left">
+          <h1 className="gpp-profile-title">{profileName}</h1>
+          <p className="gpp-profile-desc">{profileDescription}</p>
+          {/* Removed the original call to renderDefinedTerms() here */}
+        </div>
         <div className="gpp-header-right">
           <button
-            className="gpp-run-button"
-            onClick={() => {
-              // No action needed per requirements
-            }}
+            className="gpp-button gpp-run-button"
+            onClick={() => alert('Run clicked!')}
           >
             Run
+          </button>
+          <button
+            className="gpp-button gpp-update-button"
+            onClick={handleEditProfile}
+          >
+            Update
+          </button>
+          <button
+            className="gpp-button gpp-delete-button"
+            onClick={handleDeleteProfile}
+          >
+            Delete
           </button>
         </div>
       </div>
 
-      {/* Sub-info (Last run, CRM, etc.) */}
-      <div className="gpp-sub-info">
-        <p>
-          <strong>Last run:</strong> {lastRun}
-        </p>
-        <p>
-          <strong>CRM Connection:</strong> {crmConnection}
-        </p>
-        <p>
-          <strong>Connection name:</strong> {connectionName}
-        </p>
-        <p>
-          <strong>Scheduled frequency:</strong> {scheduledFrequency}
-        </p>
-        <p>
-          <strong>Created by:</strong> {createdBy}
-        </p>
+      {/* Info Row */}
+      <div className="gpp-info-row">
+        {/* Left Column: Additional Info */}
+        <div className="gpp-additional-info">
+          <div className="gpp-info-item">
+            <span className="gpp-info-label">CRM Connection</span>
+            <div className="gpp-info-nested-item">
+              <span className="gpp-info-label-nested">CRM Connection:</span>
+              <span>{crmConnection}</span>
+            </div>
+          </div>
+
+          <div className="gpp-info-item">
+            <span className="gpp-info-label">Schedule frequency</span>
+            <div className="gpp-info-nested-item">
+              <span className="gpp-info-label-nested">Schedule frequency:</span>
+              <span>{scheduledFrequency}</span>
+            </div>
+          </div>
+
+          <div className="gpp-info-item">
+            <span className="gpp-info-label">Reconciliation</span>
+            <div className="gpp-info-nested-item">
+              <span className="gpp-info-label-nested">Created by:</span>
+              <span>{createdBy}</span>
+            </div>
+          </div>
+
+          <div className="gpp-info-item">
+            <span className="gpp-info-label">Last run date</span>
+            <div className="gpp-info-nested-item">
+              <span className="gpp-info-label-nested">Last run date:</span>
+              <span>{lastRun}</span>
+            </div>
+          </div>
+
+          {/* NEW: Defined Terms item in the same box */}
+          <div className="gpp-info-item">
+            <span className="gpp-info-label">Defined terms</span>
+            <div className="gpp-info-nested-item">
+              {/* We use the inline function to render them as text */}
+              <span className="gpp-info-label-nested">Defined terms:</span>
+              <span>{renderDefinedTermsInline()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Documents Stats */}
+        <div className="gpp-documents-stats">
+          <h3 className="gpp-documents-heading">Documents</h3>
+          <div className="gpp-stats-container">
+            <div className="gpp-stat-box">
+              <div className="gpp-stat-number">{total}</div>
+              <div className="gpp-stat-label">Total</div>
+            </div>
+            <div className="gpp-stat-box">
+              <div className="gpp-stat-number">{processed}</div>
+              <div className="gpp-stat-label">Processed</div>
+            </div>
+            <div className="gpp-stat-box">
+              <div className="gpp-stat-number">{unprocessed}</div>
+              <div className="gpp-stat-label">Unprocessed</div>
+            </div>
+            <div className="gpp-stat-box">
+              <div className="gpp-stat-number">{failed}</div>
+              <div className="gpp-stat-label">Failed</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats cards */}
-      <div className="gpp-stats-container">
-        <div className="gpp-stat-box">
-          <div className="gpp-stat-number">{total}</div>
-          <div className="gpp-stat-label">Total</div>
-        </div>
-        <div className="gpp-stat-box">
-          <div className="gpp-stat-number">{processed}</div>
-          <div className="gpp-stat-label">Processed</div>
-        </div>
-        <div className="gpp-stat-box">
-          <div className="gpp-stat-number">{unprocessed}</div>
-          <div className="gpp-stat-label">Unprocessed</div>
-        </div>
-        <div className="gpp-stat-box">
-          <div className="gpp-stat-number">{failed}</div>
-          <div className="gpp-stat-label">Failed</div>
-        </div>
-      </div>
-
-      {/* Associated Documents */}
+      {/* Documents Section */}
       <div className="gpp-documents-section">
         <div className="gpp-documents-header">
-          <h3>Associated documents</h3>
-          <div className="gpp-search-and-upload">
-            <input
-              type="text"
-              placeholder="Search by document name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button className="gpp-upload-btn" onClick={handleUploadDocument}>
+          <h2>Associated documents</h2>
+          <div className="gpp-search-upload">
+            <div className="gpp-search-container">
+              <input
+                type="text"
+                placeholder="Search by document name"
+                value={searchQuery}
+                className="gpp-search-input"
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button className="gpp-search-button">
+                <span className="gpp-search-icon">Q</span>
+              </button>
+              <span className="gpp-search-all">All</span>
+            </div>
+
+            <button
+              className="gpp-button gpp-upload-button"
+              onClick={() => alert('Upload clicked!')}
+            >
               Upload document
             </button>
           </div>
         </div>
-
         <table className="gpp-documents-table">
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Document name</th>
               <th>Size</th>
               <th>Uploaded on</th>
+              <th>Processed on</th>
               <th>Status</th>
-              <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredDocuments.map((doc) => (
               <tr key={doc.id}>
-                <td>{doc.name}</td>
+                <td>
+                  <div className="gpp-doc-info">
+                    <img
+                      src={doc.thumbnail}
+                      alt="Doc Thumbnail"
+                      className="gpp-doc-thumb"
+                    />
+                    <div>
+                      <div className="gpp-doc-name">{doc.name}</div>
+                      <div className="gpp-doc-pages">{doc.pages} pages</div>
+                    </div>
+                  </div>
+                </td>
                 <td>{doc.size}</td>
                 <td>{doc.uploadedOn}</td>
-                <td>{doc.status}</td>
-                <td style={{ textAlign: 'center' }}>
-                  {/* Icons or text buttons for Use & Delete */}
-                  <button
-                    className="gpp-use-btn"
-                    onClick={() => setShowUseModal(true)}
+                <td>{doc.processedOn || '-'}</td>
+                <td>
+                  <span
+                    className={
+                      doc.status === 'Processed'
+                        ? 'gpp-status-badge processed'
+                        : doc.status === 'Failed'
+                        ? 'gpp-status-badge failed'
+                        : 'gpp-status-badge unprocessed'
+                    }
                   >
-                    Use
-                  </button>
-                  <button
-                    className="gpp-delete-btn"
-                    onClick={() => setShowDeleteModal(true)}
-                  >
-                    Delete
-                  </button>
+                    {doc.status}
+                  </span>
                 </td>
               </tr>
             ))}
-
-            {/* If no documents found after filtering */}
             {filteredDocuments.length === 0 && (
               <tr>
                 <td colSpan="5" style={{ textAlign: 'center' }}>
@@ -268,18 +397,17 @@ function GetParticularProfile() {
         </table>
       </div>
 
-      {/* Modals (conditionally rendered) */}
-      {showDeleteModal && (
-        <DeleteProfileModal
-          onClose={() => setShowDeleteModal(false)}
-          // Pass any additional props you need
+      {/* Modals */}
+      {editModalProfileId && (
+        <EditProfileModal
+          profile={{ profileId: editModalProfileId }}
+          onClose={() => setEditModalProfileId(null)}
         />
       )}
-
-      {showUseModal && (
-        <UseProfileModal
-          onClose={() => setShowUseModal(false)}
-          // Pass any additional props you need
+      {deleteModalProfileId && (
+        <DeleteProfileModal
+          profile={{ profileId: deleteModalProfileId }}
+          onClose={() => setDeleteModalProfileId(null)}
         />
       )}
     </div>
