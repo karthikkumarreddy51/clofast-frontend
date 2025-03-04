@@ -23,7 +23,8 @@ function GetParticularProfile() {
   // Dummy data to use if backend data is unavailable
   const dummyProfile = {
     profileName: 'Lorem Ipsum',
-    profileDescription: 'Lorem ipsum dolor sit amet consectetur. Non si eget suspendisse arcu feugiat arcu egestas.',
+    profileDescription:
+      'Lorem ipsum dolor sit amet consectetur. Non si eget suspendisse arcu feugiat arcu egestas.',
     lastRun: '04/02/25',
     termVersion: 'Term 2, v10',
     crmConnection: 'Connected',
@@ -63,7 +64,9 @@ function GetParticularProfile() {
   useEffect(() => {
     async function fetchProfileData() {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/get/particular/profile?profileId=${id}`);
+        const response = await fetch(
+          `http://127.0.0.1:8000/get/particular/profile?profileId=${id}`
+        );
         if (!response.ok) {
           throw new Error('Failed to fetch profile data');
         }
@@ -82,7 +85,7 @@ function GetParticularProfile() {
           total: data.total_documents || dummyProfile.total,
           processed: data.active_documents || dummyProfile.processed,
           unprocessed: (data.total_documents || 0) - (data.active_documents || 0),
-          failed: 60, // if your backend returns this, replace with actual field
+          failed: 60, // If your backend returns this, replace it with actual data
           documents: data.documents || dummyProfile.documents,
         };
 
