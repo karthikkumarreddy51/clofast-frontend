@@ -2,8 +2,13 @@ import React, { useEffect, useState } from 'react';
 import cronParser from 'cron-parser';
 import '../styles/CreateProfile.css';
 
+// 1) Import the separate UploadDocumentModal
+import UploadDocumentModal from './UploadDocumentModal';
+
 const CreateProfile = ({ onClose }) => {
-  // Form State
+  // ==========================
+  // Existing State
+  // ==========================
   const [definedTerms, setDefinedTerms] = useState([{ specificTerm: '', termDescription: '' }]);
   const [profileTitle, setProfileTitle] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
@@ -17,6 +22,14 @@ const CreateProfile = ({ onClose }) => {
   const [monthlyDay, setMonthlyDay] = useState('1');
   const [cronExpression, setCronExpression] = useState('');
 
+  // ==========================
+  // NEW State for Document Upload
+  // ==========================
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  // Terms that come back from the backend after uploading a document
+  const [docDefinedTerms, setDocDefinedTerms] = useState([]);
+
   // Prevent background scrolling while modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -25,7 +38,9 @@ const CreateProfile = ({ onClose }) => {
     };
   }, []);
 
-  // Handlers for Defined Terms
+  // ==========================
+  // Defined Terms Handlers
+  // ==========================
   const handleAddDefinedTerm = () => {
     setDefinedTerms([...definedTerms, { specificTerm: '', termDescription: '' }]);
   };
@@ -44,7 +59,70 @@ const CreateProfile = ({ onClose }) => {
     setDefinedTerms(updated);
   };
 
-  // Handlers for Schedule
+  // ==========================
+  // Upload Document Handlers
+  // ==========================
+  const openUploadModal = () => {
+    setShowUploadModal(true);
+  };
+
+  const closeUploadModal = () => {
+    setShowUploadModal(false);
+    // Optionally reset selectedFile here: setSelectedFile(null);
+  };
+
+  // Called when the user selects a file
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  // POST file to backend and update terms state based on response JSON
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/upload-doc', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('File upload failed');
+      }
+
+      const data = await response.json();
+
+      // Convert keys/values arrays into an array of term objects
+      if (
+        data.extractedTermDescrpition &&
+        data.extractedTermDescrpition.keys &&
+        data.extractedTermDescrpition.values
+      ) {
+        const { keys, values } = data.extractedTermDescrpition;
+        const terms = keys.map((key, index) => ({
+          specificTerm: key,
+          termDescription: values[index],
+        }));
+        setDocDefinedTerms(terms);
+      }
+
+      // Close modal after upload
+      setShowUploadModal(false);
+      // Optionally clear the selected file: setSelectedFile(null);
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading document');
+    }
+  };
+
+  // ==========================
+  // Schedule Handlers
+  // ==========================
   const handleToggleSchedule = () => {
     setScheduleOpen(!scheduleOpen);
   };
@@ -53,7 +131,6 @@ const CreateProfile = ({ onClose }) => {
     setFrequency(freq);
   };
 
-  // Next Occurrences Calculator
   const getNextOccurrences = () => {
     const formatDate = (date) =>
       date.toLocaleString('en-GB', {
@@ -158,24 +235,21 @@ const CreateProfile = ({ onClose }) => {
     return occurrences;
   };
 
-  // Updated Submit Handler
-  // The simple fields (user_id, profile_title, profile_description) are sent as query parameters.
-  // The complex fields (defined_terms and schedule_config) are sent in the JSON body.
+  // ==========================
+  // Submit Handler
+  // ==========================
   const handleSaveProfile = async (draft = false) => {
     let isoDateTime = '';
 
+    // Frequency-based date logic
     if (frequency === 'intraday') {
-      // For intraday, calculate the first occurrence using the entered hours/minutes
       const now = new Date();
       const incrementMinutes = parseInt(intradayHours, 10) * 60 + parseInt(intradayMinutes, 10);
       if (!isNaN(incrementMinutes) && incrementMinutes > 0) {
         const firstOccurrence = new Date(now.getTime() + incrementMinutes * 60000);
         isoDateTime = firstOccurrence.toISOString();
-      } else {
-        isoDateTime = '';
       }
     } else if (frequency === 'custom') {
-      // For custom frequency, we only send the cron expression, so no date is needed.
       isoDateTime = '';
     } else {
       if (scheduleTime) {
@@ -187,26 +261,29 @@ const CreateProfile = ({ onClose }) => {
         }
       }
     }
-    
+
     let schedulePayload = {};
     if (frequency === 'custom') {
       schedulePayload = { frequency, cron_expression: cronExpression };
     } else {
       schedulePayload = { frequency, date_str: isoDateTime };
     }
-    
-    // Build query parameters for simple types
+
+    // Merge the user-defined terms and the doc-defined terms
+    const allTerms = [...definedTerms, ...docDefinedTerms];
+
+    // Build query parameters for simple fields
     const queryParams = new URLSearchParams({
       user_id: "some_user_id", // Replace with actual user id if available
       profile_title: profileTitle,
       profile_description: profileDescription,
     }).toString();
-    
+
     const url = `http://127.0.0.1:8000/insert/documents/profileId?${queryParams}`;
-    
-    // Build the JSON body for the complex types
+
+    // Build the JSON body
     const bodyPayload = {
-      defined_terms: definedTerms,
+      defined_terms: allTerms,
       schedule_config: schedulePayload,
     };
 
@@ -220,12 +297,10 @@ const CreateProfile = ({ onClose }) => {
       });
 
       if (!response.ok) {
-        // Optionally extract error details
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save profile');
       }
 
-      // Parse the returned payload from the backend
       const result = await response.json();
       console.log("Response from backend:", result);
       alert(`Profile ${draft ? 'draft' : 'active'} saved successfully!`);
@@ -245,7 +320,11 @@ const CreateProfile = ({ onClose }) => {
             &times;
           </button>
         </div>
+
         <div className="modal-body">
+          {/* ======================
+              Basic Profile Fields
+          ======================= */}
           <div className="form-group">
             <label>Profile Title</label>
             <input
@@ -255,6 +334,7 @@ const CreateProfile = ({ onClose }) => {
               onChange={(e) => setProfileTitle(e.target.value)}
             />
           </div>
+
           <div className="form-group">
             <label>Profile Description</label>
             <input
@@ -264,6 +344,10 @@ const CreateProfile = ({ onClose }) => {
               onChange={(e) => setProfileDescription(e.target.value)}
             />
           </div>
+
+          {/* ======================
+              Defined Terms
+          ======================= */}
           <div className="form-group">
             <label>Define Terms</label>
             <div className="terms-container">
@@ -271,7 +355,7 @@ const CreateProfile = ({ onClose }) => {
                 <div key={index} className="defined-term-row">
                   <input
                     type="text"
-                    placeholder="Enter Specific Term"
+                    placeholder="Term"
                     value={term.specificTerm}
                     onChange={(e) =>
                       handleDefinedTermChange(index, 'specificTerm', e.target.value)
@@ -279,7 +363,7 @@ const CreateProfile = ({ onClose }) => {
                   />
                   <input
                     type="text"
-                    placeholder="Enter Description"
+                    placeholder="Description"
                     value={term.termDescription}
                     onChange={(e) =>
                       handleDefinedTermChange(index, 'termDescription', e.target.value)
@@ -288,19 +372,62 @@ const CreateProfile = ({ onClose }) => {
                   {definedTerms.length > 1 && (
                     <button
                       type="button"
-                      className="remove-term-btn"
+                      className="minus-btn"
                       onClick={() => handleRemoveDefinedTerm(index)}
                     >
-                      Remove term
+                      –
+                    </button>
+                  )}
+                  {index === definedTerms.length - 1 && (
+                    <button
+                      type="button"
+                      className="plus-btn"
+                      onClick={handleAddDefinedTerm}
+                    >
+                      +
                     </button>
                   )}
                 </div>
               ))}
             </div>
-            <button type="button" className="add-term-btn" onClick={handleAddDefinedTerm}>
-              Add term
-            </button>
+
+            {/* ======================
+                Upload Document Button
+            ======================= */}
+            <div className="upload-doc-section">
+              <button
+                type="button"
+                className="upload-doc-btn"
+                onClick={openUploadModal}
+              >
+                Upload document
+              </button>
+              {selectedFile && (
+                <span className="uploaded-file-name" style={{ marginLeft: '10px' }}>
+                  {selectedFile.name}
+                </span>
+              )}
+            </div>
+
+            {/* ======================
+                Terms from the Document
+            ======================= */}
+            {docDefinedTerms && docDefinedTerms.length > 0 && (
+              <div className="terms-container doc-terms-container">
+                <h4>Terms from Uploaded Document</h4>
+                {docDefinedTerms.map((term, index) => (
+                  <div key={index} className="defined-term-row">
+                    <input type="text" value={term.specificTerm} readOnly />
+                    <input type="text" value={term.termDescription} readOnly />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* ======================
+              Schedule Section
+          ======================= */}
           <div className="action-buttons">
             <button
               type="button"
@@ -310,6 +437,7 @@ const CreateProfile = ({ onClose }) => {
               Set a schedule
             </button>
           </div>
+
           {scheduleOpen && (
             <div className="schedule-section">
               <h3>Set a schedule</h3>
@@ -486,6 +614,10 @@ const CreateProfile = ({ onClose }) => {
             </div>
           )}
         </div>
+
+        {/* ======================
+            Footer
+        ======================= */}
         <div className="modal-footer">
           <button type="button" onClick={() => handleSaveProfile(true)}>
             SAVE AS DRAFT
@@ -495,6 +627,16 @@ const CreateProfile = ({ onClose }) => {
           </button>
         </div>
       </div>
+
+      {/* ======================
+          SMALL UPLOAD MODAL
+      ======================= */}
+      <UploadDocumentModal
+        isOpen={showUploadModal}
+        onClose={closeUploadModal}
+        onFileSelect={handleFileChange}
+        onUpload={handleFileUpload}
+      />
     </div>
   );
 };

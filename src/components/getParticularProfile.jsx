@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom'; // <-- Import Link
 import EditProfileModal from './EditProfileModal';
 import DeleteProfileModal from './DeleteProfileModal';
+// import Profiles from './Profiles.jsx';
 import '../styles/getParticularProfile.css'; // Ensure correct path
 
 function GetParticularProfile() {
@@ -210,9 +211,9 @@ function GetParticularProfile() {
 
   return (
     <div className="gpp-container">
-      {/* Breadcrumb */}
+      {/* Breadcrumb with clickable link to the Profiles page */}
       <div className="gpp-breadcrumb">
-        <span>Profiles</span> &gt; <span>{profileName}</span>
+        <Link to="/profiles">Profiles</Link> &gt; <span>{profileName}</span>
       </div>
 
       {/* Header Section */}
@@ -220,7 +221,6 @@ function GetParticularProfile() {
         <div className="gpp-header-left">
           <h1 className="gpp-profile-title">{profileName}</h1>
           <p className="gpp-profile-desc">{profileDescription}</p>
-          {/* Removed the original call to renderDefinedTerms() here */}
         </div>
         <div className="gpp-header-right">
           <button
@@ -280,11 +280,10 @@ function GetParticularProfile() {
             </div>
           </div>
 
-          {/* NEW: Defined Terms item in the same box */}
+          {/* Defined Terms */}
           <div className="gpp-info-item">
             <span className="gpp-info-label">Defined terms</span>
             <div className="gpp-info-nested-item">
-              {/* We use the inline function to render them as text */}
               <span className="gpp-info-label-nested">Defined terms:</span>
               <span>{renderDefinedTermsInline()}</span>
             </div>

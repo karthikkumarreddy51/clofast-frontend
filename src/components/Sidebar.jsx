@@ -1,6 +1,7 @@
+// src/components/Sidebar.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaUser, FaFileAlt, FaLink, FaExchangeAlt, FaBars, FaTimes } from 'react-icons/fa';
+import { FaUser, FaFileAlt, FaLink, FaExchangeAlt, FaTrashAlt, FaBars, FaTimes } from 'react-icons/fa';
 import '../styles/Sidebar.css';
 
 const Sidebar = () => {
@@ -45,6 +46,13 @@ const Sidebar = () => {
             </li>
           </ul>
         </nav>
+        {/* Trash Bin icon positioned at the bottom right of the sidebar */}
+        <div className="sidebar-trash-bin">
+          <Link to="/trashbin">
+            <FaTrashAlt className="sidebar-icon trash-icon" />
+            <span className="trash-label">Trash Bin</span>
+          </Link>
+        </div>
       </div>
 
       {/* Mobile version: visible on small screens */}
@@ -85,6 +93,13 @@ const Sidebar = () => {
                   Reconciliation
                 </Link>
               </li>
+              {/* Trash Bin in mobile menu */}
+              <li>
+                <Link to="/trashbin" onClick={toggleMobileMenu}>
+                  <FaTrashAlt className="sidebar-icon" />
+                  Trash Bin
+                </Link>
+              </li>
             </ul>
           </nav>
         )}
@@ -94,4 +109,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

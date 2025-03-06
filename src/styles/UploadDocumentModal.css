@@ -1,0 +1,62 @@
+/* UploadDocumentModal.css */
+
+/* Dark overlay behind the modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* The small modal container */
+  .upload-doc-modal {
+    background: #fff;
+    width: 400px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  /* Header with close button */
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  
+  /* Body area with dashed dropzone */
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .upload-dropzone {
+    border: 2px dashed #ccc;
+    text-align: center;
+    padding: 40px;
+    cursor: pointer;
+  }
+  
+  /* Footer with actions */
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px;
+    border-top: 1px solid #ccc;
+  }
+  
+  .modal-footer button {
+    margin-left: 8px;
+  }
+  

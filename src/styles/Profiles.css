@@ -101,24 +101,27 @@
 }
 
 /* Profiles Grid */
-/* Force exactly 3 columns on large screens */
+/* The grid will display 3 columns on large screens, 2 on medium, 1 on small */
 .profiles-grid {
   display: grid;
   gap: 30px;
 }
 
+/* Large screens: exactly 3 equal columns that fill the container */
 @media (min-width: 1200px) {
   .profiles-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
+/* Medium screens: 2 columns */
 @media (min-width: 768px) and (max-width: 1199px) {
   .profiles-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
+/* Small screens: 1 column */
 @media (max-width: 767px) {
   .profiles-grid {
     grid-template-columns: 1fr;
@@ -241,9 +244,9 @@
   background-color: yellow;
   font-weight: bold;
 }
+
 .profile-card.clicked {
   transform: scale(1.05);
   border: 2px solid #007bff;
   transition: transform 0.2s, border 0.2s;
 }
-

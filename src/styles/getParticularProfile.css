@@ -298,3 +298,46 @@
   padding: 20px;
   color: #777;
 }
+
+
+
+/*small screens*/
+/* Base mobile-first styles */
+.gpp-container {
+  padding: 20px;
+}
+
+.gpp-header-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.gpp-documents-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Make the table scrollable on small screens */
+.gpp-documents-section {
+  overflow-x: auto;
+}
+
+/* Adjust individual table cells */
+.gpp-documents-table th,
+.gpp-documents-table td {
+  padding: 10px;
+  text-align: left;
+}
+
+/* Larger screens: adjust layout for better use of space */
+@media (min-width: 768px) {
+  .gpp-header-section {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .gpp-container {
+    padding: 40px;
+  }
+}

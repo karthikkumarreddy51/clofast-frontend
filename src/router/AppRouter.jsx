@@ -7,6 +7,7 @@ import Documents from '../components/Documents';
 import CRMIntegration from '../components/CRMIntegration';
 import Reconciliation from '../components/Reconciliation';
 import GetParticularProfile from '../components/getParticularProfile';
+import TrashBin from '../components/TrashBin';
 
 const AppRouter = () => {
   return (
@@ -25,6 +26,9 @@ const AppRouter = () => {
           <Route path="documents" element={<Documents />} />
           <Route path="crm-integration" element={<CRMIntegration />} />
           <Route path="reconciliation" element={<Reconciliation />} />
+
+          {/* Trash Bin route */}
+          <Route path="trashbin" element={<TrashBin />} />
         </Route>
       </Routes>
     </Router>

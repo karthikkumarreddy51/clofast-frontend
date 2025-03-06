@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import cronParser from 'cron-parser';
 import '../styles/EditProfileModal.css';
+import UploadDocumentModal from './UploadDocumentModal';
 
 const EditProfileModal = ({ profile, onClose }) => {
   // Local state for form fields (populated via GET call on mount)
@@ -20,6 +21,12 @@ const EditProfileModal = ({ profile, onClose }) => {
   const [weeklyDay, setWeeklyDay] = useState('Monday');
   const [monthlyDay, setMonthlyDay] = useState('1');
   const [cronExpression, setCronExpression] = useState('');
+
+  // NEW state for Document Upload
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  // Terms returned from the backend after uploading a document
+  const [docDefinedTerms, setDocDefinedTerms] = useState([]);
 
   // Fetch profile data on mount via GET request
   useEffect(() => {
@@ -194,7 +201,55 @@ const EditProfileModal = ({ profile, onClose }) => {
     return occurrences;
   };
 
-  // Handler for updating the profile via PUT call using the new URL
+  // Handlers for document upload
+  const openUploadModal = () => {
+    setShowUploadModal(true);
+  };
+
+  const closeUploadModal = () => {
+    setShowUploadModal(false);
+    // Optionally clear file if needed:
+    // setSelectedFile(null);
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  // POST file to backend, get extracted terms, and set them into state
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/upload-doc', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('File upload failed');
+      }
+
+      // Suppose backend returns: { terms: [ { specificTerm, termDescription }, ... ] }
+      const data = await response.json();
+      if (data.terms && Array.isArray(data.terms)) {
+        setDocDefinedTerms(data.terms);
+      }
+
+      // Close the modal after a successful upload
+      setShowUploadModal(false);
+    } catch (err) {
+      console.error(err);
+      alert('Error uploading document');
+    }
+  };
+
+  // Handler for updating the profile via PUT call
   const handleUpdateProfile = async () => {
     let isoDateTime = '';
 
@@ -225,6 +280,9 @@ const EditProfileModal = ({ profile, onClose }) => {
       schedulePayload = { frequency, date_str: isoDateTime };
     }
 
+    // Merge the user-defined terms with the terms extracted from the uploaded document
+    const allTerms = [...definedTerms, ...docDefinedTerms];
+
     // Build query parameters for the PUT URL (using the new endpoint)
     const queryParams = new URLSearchParams({
       profileId: profile.profileId,
@@ -233,11 +291,10 @@ const EditProfileModal = ({ profile, onClose }) => {
       status: status
     }).toString();
 
-    // Updated PUT URL using "update/Docprofile"
     const url = `http://127.0.0.1:8000/update/Docprofile?${queryParams}`;
 
     const bodyPayload = {
-      defined_terms: definedTerms,
+      defined_terms: allTerms,
       schedule_config: schedulePayload,
     };
 
@@ -289,7 +346,7 @@ const EditProfileModal = ({ profile, onClose }) => {
               onChange={(e) => setProfileDescription(e.target.value)}
             />
           </div>
-          {/* Status Radio Buttons */}
+          {/* Status */}
           <div className="form-group">
             <label>Status</label>
             <div>
@@ -323,29 +380,66 @@ const EditProfileModal = ({ profile, onClose }) => {
                 <div key={index} className="defined-term-row">
                   <input
                     type="text"
-                    placeholder="Enter Specific Term"
+                    placeholder="Term"
                     value={term.specificTerm}
                     onChange={(e) => handleDefinedTermChange(index, 'specificTerm', e.target.value)}
                   />
                   <input
                     type="text"
-                    placeholder="Enter Description"
+                    placeholder="Description"
                     value={term.termDescription}
                     onChange={(e) => handleDefinedTermChange(index, 'termDescription', e.target.value)}
                   />
                   {definedTerms.length > 1 && (
-                    <button type="button" className="remove-term-btn" onClick={() => handleRemoveDefinedTerm(index)}>
-                      Remove term
+                    <button
+                      type="button"
+                      className="minus-btn"
+                      onClick={() => handleRemoveDefinedTerm(index)}
+                    >
+                      –
+                    </button>
+                  )}
+                  {index === definedTerms.length - 1 && (
+                    <button
+                      type="button"
+                      className="plus-btn"
+                      onClick={handleAddDefinedTerm}
+                    >
+                      +
                     </button>
                   )}
                 </div>
               ))}
             </div>
-            <button type="button" className="add-term-btn" onClick={handleAddDefinedTerm}>
-              Add term
-            </button>
+            {/* Upload Document Button */}
+            <div className="upload-doc-section">
+              <button
+                type="button"
+                className="upload-doc-btn"
+                onClick={openUploadModal}
+              >
+                Upload document
+              </button>
+              {selectedFile && (
+                <span className="uploaded-file-name" style={{ marginLeft: '10px' }}>
+                  {selectedFile.name}
+                </span>
+              )}
+            </div>
+            {/* Terms from the Document */}
+            {docDefinedTerms && docDefinedTerms.length > 0 && (
+              <div className="terms-container doc-terms-container">
+                <h4>Terms from Uploaded Document</h4>
+                {docDefinedTerms.map((term, index) => (
+                  <div key={index} className="defined-term-row">
+                    <input type="text" value={term.specificTerm} readOnly />
+                    <input type="text" value={term.termDescription} readOnly />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          {/* Schedule Actions */}
+          {/* Schedule Section */}
           <div className="action-buttons">
             <button
               type="button"
@@ -415,13 +509,7 @@ const EditProfileModal = ({ profile, onClose }) => {
                   <div className="days-row">
                     {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
                       <label key={day}>
-                        <input
-                          type="radio"
-                          name="weeklyDay"
-                          value={day}
-                          checked={weeklyDay === day}
-                          onChange={() => setWeeklyDay(day)}
-                        />
+                        <input type="radio" name="weeklyDay" value={day} checked={weeklyDay === day} onChange={() => setWeeklyDay(day)} />
                         {day}
                       </label>
                     ))}
@@ -468,6 +556,14 @@ const EditProfileModal = ({ profile, onClose }) => {
           </button>
         </div>
       </div>
+
+      {/* Small Upload Modal */}
+      <UploadDocumentModal
+        isOpen={showUploadModal}
+        onClose={closeUploadModal}
+        onFileSelect={handleFileChange}
+        onUpload={handleFileUpload}
+      />
     </div>
   );
 };
